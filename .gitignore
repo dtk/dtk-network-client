@@ -1,3 +1,5 @@
 *.gem
 sftp-config*.json
-.byebug_history
+.remote-sync.json
+Gemfile.lock
+.vscode
