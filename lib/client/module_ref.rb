@@ -7,12 +7,6 @@ module DTK::Network
         @version      = module_info[:version]
         @dependencies = module_info[:dependencies]
       end
-
-      def calculate_dependencies
-        @dependencies.each do |dependency|
-          
-        end
-      end
     end
   end
 end
