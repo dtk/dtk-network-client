@@ -89,7 +89,7 @@ module DTK::Network
       end
 
       def self.clone(repo_url, target_path, branch)
-        git_base = handle_git_error { ::Git.clone(repo_url, target_path) }
+        git_base = ::Git.clone(repo_url, target_path)
         begin
           git_base.checkout(branch)
         rescue => e
@@ -192,11 +192,10 @@ module DTK::Network
       end
 
       def stage_changes()
-        handle_git_error do
-          @git_repo.add(untracked())
-          @git_repo.add(added())
-          @git_repo.add(changed())
-        end
+        @git_repo.add(untracked())
+        @git_repo.add(added())
+        @git_repo.add(changed())
+
         deleted().each do |file|
           begin
             @git_repo.remove(file)

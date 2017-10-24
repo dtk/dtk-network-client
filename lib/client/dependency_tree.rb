@@ -1,8 +1,9 @@
+require 'semverly'
+
 module DTK::Network
   module Client
     class DependencyTree
       require_relative('dependency_tree/activated')
-      require_relative('module_mock')
 
       def initialize(module_ref, opts = {})
         @module_ref = module_ref
@@ -13,7 +14,6 @@ module DTK::Network
 
       def compute
         parsed_module = @opts[:parsed_module]
-
 
         dependencies = (parsed_module.val(:DependentModules) || []).map do |parsed_module_ref|
           dep_module_name = parsed_module_ref.req(:ModuleName)
