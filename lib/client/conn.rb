@@ -61,11 +61,11 @@ module DTK::Network
       end
       
       def get_raw(url, query_string_hash = {})
-        RestClient::Resource.new(url, query_string_hash.merge(cookies: @cookies)).get
+        RestClient::Resource.new(url, default_rest_opts.merge(cookies: @cookies)).get(params: query_string_hash)
       end
 
-      def post_raw(url, post_body, params = {})
-        RestClient::Resource.new(url, params.merge(cookies: @cookies)).post(post_body)
+      def post_raw(url, post_body)
+        RestClient::Resource.new(url, default_rest_opts.merge(cookies: @cookies)).post(post_body)
       end
     end
   end

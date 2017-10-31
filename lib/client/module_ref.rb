@@ -1,11 +1,16 @@
 module DTK::Network
   module Client
     class ModuleRef
+      require_relative('module_ref/dependency')
+      require_relative('module_ref/version')
+
+      attr_reader :name, :namespace, :version, :repo_dir
+
       def initialize(module_info)
-        @name         = module_info[:name]
-        @namespace    = module_info[:namespace]
-        @version      = module_info[:version]
-        @dependencies = module_info[:dependencies]
+        @name      = module_info[:name]
+        @namespace = module_info[:namespace]
+        @version   = module_info[:version]
+        @repo_dir  = module_info[:repo_dir]
       end
     end
   end

@@ -4,121 +4,71 @@ module DTK::Network
   module Client
     class DependencyTree
       require_relative('dependency_tree/activated')
+      require_relative('dependency_tree/cache')
 
       def initialize(module_ref, opts = {})
-        @module_ref = module_ref
+        @module_ref       = module_ref
         @module_directory = opts[:module_directory]
-        @activated  = Activated.new
-        @opts = opts
+        @activated        = Activated.new
+        @cache            = Cache.new
+        @opts             = opts
+      end
+
+      def self.compute_and_save(module_ref, opts = {})
+        activated = compute(module_ref, opts)
+        ModuleDir.create_file_with_content("#{module_ref.repo_dir}/module_ref.lock", YAML.dump(activated.to_h))
+      end
+
+      def self.compute(module_ref, opts = {})
+        new(module_ref, opts).compute
       end
 
       def compute
-        parsed_module = @opts[:parsed_module]
+        dtkn_dependencies = Session.rest_get('modules/dependencies_for_name', { name: @module_ref.name, namespace: @module_ref.namespace, version: @module_ref.version })
+        dtkn_dependencies = JSON.parse(dtkn_dependencies)
 
-        dependencies = (parsed_module.val(:DependentModules) || []).map do |parsed_module_ref|
-          dep_module_name = parsed_module_ref.req(:ModuleName)
-          dep_namespace   = parsed_module_ref.req(:Namespace)
-          dep_version     = parsed_module_ref.val(:ModuleVersion)
-          {
-            name: dep_module_name,
-            namespace: dep_namespace,
-            version: dep_version
-          }
+        dependencies = dtkn_dependencies['dependencies'].map do |pm_ref|
+          ModuleRef::Dependency.new({ name: pm_ref['module'], namespace: pm_ref['namespace'], version: pm_ref['version'] })
         end
 
         activate_dependencies(dependencies)
-
-        content = @activated.to_h.to_yaml
-        file_name = "#{@opts[:module_directory]}/module_ref.lock"
-        FileUtils.mkdir_p(File.dirname(file_name))
-        File.open(file_name, 'w') { |f| f << content }
+        @activated
       end
+
+      private
 
       def activate_dependencies(dependencies, opts = {})
-        @session = @opts[:session]
-        query_string_hash = {
-          :detail_to_include => ['remotes', 'versions'],
-          :rsa_pub_key => @opts[:rsa_pub_key],
-          :module_namespace? => nil
-        }
-        module_list_response = @session.conn.get("modules/remote_modules", query_string_hash)
-        @module_list = {}
-        module_list_response.data.each { |mod| @module_list.merge!(mod['display_name'] => { name: mod['display_name'].split('/').last, namespace: mod['display_name'].split('/').first, versions: mod['versions']}) }
-
         dependencies.each do |dependency|
-          dep_module_matching_versions = @module_list["#{dependency[:namespace]}/#{dependency[:name]}"]
+          next if @activated.module_activated?(dependency)
 
-          # check if any of those versions is already activated
-          activated = @activated.contains_module?(dep_module_matching_versions)
+          # all_dtkn_dependency_versions  = Session.rest_get("modules/get_versions", { name: dependency.name, namespace: dependency.namespace })
+          all_dtkn_dependency_versions  = Session.rest_get("modules/get_versions_with_dependencies", { name: dependency.name, namespace: dependency.namespace })
 
-          # if some of the versions is already activated then skip to next dependency
-          next if activated
+          dtkn_dependency_versions_hash = JSON.parse(all_dtkn_dependency_versions)
+          # dtkn_dependency_versions      = dtkn_dependency_versions_hash['versions']
+          dtkn_dependency_versions      = dtkn_dependency_versions_hash.map { |v| v['version'] }
 
-          # if same module activated but version does not match then deactivate module version and try with different one
-          if existing_name = @activated.existing_name(dep_module_matching_versions[:name])
-            throw :test
+          req_dependency_version_obj          = dependency.version
+          dtkn_versions_matching_requirements = req_dependency_version_obj.versions_in_range(dtkn_dependency_versions)
+
+          raise "No version matching requirements" if dtkn_versions_matching_requirements.empty?
+
+          latest_version = dtkn_versions_matching_requirements.sort.last
+          dtkn_dependency_matching_version = ModuleRef::Dependency.new({ name: dependency.name, namespace: dependency.namespace, version: latest_version })
+          @activated.add!(dtkn_dependency_matching_version)
+
+          # dtkn_deps_of_deps = Session.rest_get("modules/dependencies_for_name", { name: dtkn_dependency_matching_version.name, namespace: dtkn_dependency_matching_version.namespace, version: latest_version })
+          dtkn_deps_of_deps = dtkn_dependency_versions_hash.find {|dep| dep['version'].eql?(latest_version) }
+          # dtkn_deps_of_deps = JSON.parse(dtkn_deps_of_deps)
+
+          dtkn_deps_of_deps_objs = (dtkn_deps_of_deps['dependencies'] || {}).map do |dtkn_dep_of_dep|
+            ModuleRef::Dependency.new({ name: dtkn_dep_of_dep['module'], namespace: dtkn_dep_of_dep['namespace'], version: dtkn_dep_of_dep['version'] })
           end
 
-          versions_activated = []
-          if versions = dep_module_matching_versions[:versions]
-            versions = versions.sort.reverse
-            if versions.size > 1
-              versions.delete('master')
-            end
-            versions.each do |version|
-              next if versions_activated.include?(dep_module_matching_versions[:name])
-              catch :test do
-                latest_version = {
-                  name: dep_module_matching_versions[:name],
-                  namespace: dep_module_matching_versions[:namespace],
-                  version: version
-                }
-                @activated.add(latest_version)
-
-                # if matching versions are not activated send request with latest version to repoman route which takes module version and return dep_module info and dependencies
-                # dep_module_with_deps_info = ModuleMock.ret(latest_version)
-                dep_module_with_deps_info = latest_version.merge( dependencies: [] )
-
-                hash = {
-                  :module_name => dep_module_matching_versions[:name],
-                  :namespace   => dep_module_matching_versions[:namespace],
-                  :rsa_pub_key => @opts[:rsa_pub_key],
-                  :version?    => version
-                }
-                response = @session.conn.get("modules/module_dependencies", hash)
-                if required_modules = response.data(:required_modules)
-                  dep_module_with_deps_info[:dependencies] += required_modules.map { |ref_hash| {
-                    name: ref_hash['name'],
-                    namespace: ref_hash['namespace'],
-                    version: ref_hash['version'],
-                    requirements: '='
-                  } }
-                end
-
-                # iterate through dependencies of dependencies and repeat the same process
-                dep_dependencies = dep_module_with_deps_info[:dependencies]
-                unless dep_dependencies.empty?
-                  activate_dependencies(dep_dependencies, parent: dep_module_with_deps_info)
-                end
-                versions_activated << dep_module_matching_versions[:name]
-              end
-            end
-          end
-
+          activate_dependencies(dtkn_deps_of_deps_objs, opts)
         end
       end
 
-      def select_latest(dep_module_matching_versions)
-        if versions = dep_module_matching_versions[:versions]
-          sorted_versions = versions.sort
-          latest_version = sorted_versions.delete(sorted_versions.last)
-          {
-            name: dep_module_matching_versions[:name],
-            namespace: dep_module_matching_versions[:namespace],
-            version: latest_version
-          }
-        end
-      end
     end
   end
 end

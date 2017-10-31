@@ -1,26 +1,5 @@
-#
-# Copyright (C) 2010-2016 dtk contributors
-#
-# This file is part of the dtk project.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-# This code is predciated on assumption that they is only one local branch (with with documented exceptions)
-# so checkout branch is not done in most cases
-
 module DTK::Network
   module Client
-    # Wrapper around gem that does the git operations
     class GitRepo
       require_relative('git_adapter/git_gem')
 
@@ -39,13 +18,6 @@ module DTK::Network
 
       def self.is_git_repo?(dir)
         File.directory?("#{dir}/.git")
-      end
-
-      def self.unlink_local_clone?(dir)
-        git_dir = "#{dir}/.git"
-        if File.directory?(git_dir)
-          FileUtils.rm_rf(git_dir)
-        end
       end
 
       def add_remote(name, url)
@@ -88,12 +60,6 @@ module DTK::Network
 
       def merge(branch_to_merge_from, opts = {})
         @git_adapter.merge(branch_to_merge_from, opts)
-      end
-
-      # opts can have keys:
-      #   :with_diffs (Boolean)
-      def print_status(opts = {})
-        @git_adapter.print_status(opts)
       end
 
       def push(remote, branch, opts = {})
