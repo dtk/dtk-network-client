@@ -4,13 +4,14 @@ module DTK::Network
       require_relative('module_ref/dependency')
       require_relative('module_ref/version')
 
-      attr_reader :name, :namespace, :version, :repo_dir
+      attr_reader :name, :namespace, :version, :repo_dir, :full_name
 
       def initialize(module_info)
         @name      = module_info[:name]
         @namespace = module_info[:namespace]
         @version   = module_info[:version]
         @repo_dir  = module_info[:repo_dir]
+        @full_name = "#{@namespace}/#{@name}"
       end
     end
   end

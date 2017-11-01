@@ -7,6 +7,7 @@ module DTK
       require_relative('client/config')
       require_relative('client/git_repo')
       require_relative('client/git_client')
+      require_relative('client/rest_wrapper')
       require_relative('client/install')
       require_relative('client/publish')
       require_relative('client/dependency_tree')
