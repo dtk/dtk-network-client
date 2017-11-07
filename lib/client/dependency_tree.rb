@@ -7,18 +7,30 @@ module DTK::Network
       require_relative('dependency_tree/cache')
 
       include RestWrapper
+      extend RestWrapper
+
+      LOCK_FILE = "module_ref.lock"
 
       def initialize(module_ref, opts = {})
         @module_ref       = module_ref
-        @module_directory = opts[:module_directory]
+        @module_directory = opts[:module_directory] || module_ref.repo_dir
         @activated        = Activated.new
         @cache            = Cache.new
         @opts             = opts
       end
 
+      def self.get_dependency_tree(module_ref, opts = {})
+        if content = FileHelper.get_content?("#{module_ref.repo_dir}/#{LOCK_FILE}")
+          ret_as_module_refs(YAML.load(content))
+        else
+          ret_as_module_refs(compute_and_save(module_ref, opts = {}))
+        end
+      end
+
       def self.compute_and_save(module_ref, opts = {})
         activated = compute(module_ref, opts)
-        ModuleDir.create_file_with_content("#{module_ref.repo_dir}/module_ref.lock", YAML.dump(activated.to_h))
+        ModuleDir.create_file_with_content("#{module_ref.repo_dir}/#{LOCK_FILE}", YAML.dump(activated.to_h))
+        activated
       end
 
       def self.compute(module_ref, opts = {})
@@ -43,21 +55,21 @@ module DTK::Network
           next if @activated.module_activated?(dependency)
 
           dtkn_versions_w_deps_hash = dtkn_versions_with_dependencies(dependency)
-          dtkn_versions_w_deps = dtkn_versions_w_deps_hash.map { |v| v['version'] }
+          dtkn_versions_w_deps      = dtkn_versions_w_deps_hash.map { |v| v['version'] }
 
-          version_obj = dependency.version
-          dtkn_versions_matching_requirements = version_obj.versions_in_range(dtkn_versions_w_deps)
+          version_obj       = dependency.version
+          versions_in_range = version_obj.versions_in_range(dtkn_versions_w_deps)
 
-          raise "No version matching requirements" if dtkn_versions_matching_requirements.empty?
+          raise "No version matching requirements" if versions_in_range.empty?
 
-          latest_version = dtkn_versions_matching_requirements.sort.last
-          dtkn_dependency_matching_version = ModuleRef::Dependency.new({ name: dependency.name, namespace: dependency.namespace, version: latest_version })
+          latest_version = versions_in_range.sort.last
+          matching_version_dep = ModuleRef::Dependency.new({ name: dependency.name, namespace: dependency.namespace, version: latest_version })
 
-          @activated.add!(dtkn_dependency_matching_version)
+          @activated.add!(matching_version_dep)
 
           dtkn_deps_of_deps = dtkn_versions_w_deps_hash.find {|dep| dep['version'].eql?(latest_version) }
-          dtkn_deps_of_deps_objs = (dtkn_deps_of_deps['dependencies'] || {}).map do |dtkn_dep_of_dep|
-            ModuleRef::Dependency.new({ name: dtkn_dep_of_dep['module'], namespace: dtkn_dep_of_dep['namespace'], version: dtkn_dep_of_dep['version'] })
+          dtkn_deps_of_deps_objs = (dtkn_deps_of_deps['dependencies'] || {}).map do |dtkn_dep|
+            ModuleRef::Dependency.new({ name: dtkn_dep['module'], namespace: dtkn_dep['namespace'], version: dtkn_dep['version'] })
           end
 
           activate_dependencies(dtkn_deps_of_deps_objs, opts)
@@ -72,6 +84,15 @@ module DTK::Network
       def dtkn_versions_with_dependencies(module_ref)
         all_dtkn_dependency_versions = rest_get("modules/get_versions_with_dependencies", { name: module_ref.name, namespace: module_ref.namespace })
         JSON.parse(all_dtkn_dependency_versions)
+      end
+
+      def self.ret_as_module_refs(dep_modules)
+        dep_modules.map { |k,v| create_module_ref(k, v) }
+      end
+
+      def self.create_module_ref(full_name, version_hash)
+        namespace, name = full_name.split('/')
+        ModuleRef.new({ namespace: namespace, name: name, version: version_hash[:version] })
       end
 
     end

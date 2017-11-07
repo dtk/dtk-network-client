@@ -10,31 +10,18 @@ module DTK::Network
 
       def self.run(module_info, opts = {})
         module_ref      = ModuleRef.new(module_info)
-        dependency_tree = DependencyTree.compute_and_save(module_ref, opts)
+        dependency_tree = DependencyTree.get_dependency_tree(module_ref, opts)
         new(module_ref, dependency_tree, opts).install
       end
 
       def install
-        # {"namespace"=>"modwork","module"=>"ec2","version"=>"~> 0.1.0"}
-        # {"namespace"=>"modwork","module"=>"apt","version"=>"<= 0.1.3"}
-        # {"namespace"=>"modwork","module"=>"mysql","version"=>"0.4.2"}
-        # {"namespace"=>"modwork","module"=>"rds","version"=>"~> 0.0.5"}
-
-        # concat: master
-        # puppet/nginx: master
-        # ec2-0.1.9
-        # apt-0.1.3
-        # mysql-0.4.2
-        # rds-0.0.9
-
-
-
-        # dtkn_deps_of_deps = Session.rest_get("modules/dependencies_for_name", { name: "modwork/rds", version: '0.0.9' })
-        # Session.rest_post("/modules/dependencies_for_name", { 'name' => "modwork/rds", 'version' => '0.0.9',
-        # 'dependencies' => [
-          # {"namespace"=>"modwork","module"=>"concat","version"=>"~> 0.1.0"},
-          # {"namespace"=>"modwork","module"=>"puppet","version"=>"<= 0.1.3"}
-        # ].to_json})
+        @dependency_tree.each do |dep_mod|
+          # check if exist on server
+          # if true - ask for pull-dtkn
+          # else
+          # print installing
+          # aaa = rest_get('modules/get_module_info', { name: 'modA', namespace: module_ref.namespace })
+        end
       end
     end
   end

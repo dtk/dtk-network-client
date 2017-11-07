@@ -11,7 +11,7 @@ module DTK::Network
         end
 
         def add!(dependency_mod)
-          self.merge!("#{dependency_mod.full_name}" => { version: dependency_mod.version.str_version })
+          self.merge!("#{dependency_mod.full_name}" => { 'version' => dependency_mod.version.str_version })
         end
 
         def existing_name?(name)

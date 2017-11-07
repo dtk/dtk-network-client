@@ -16,6 +16,7 @@ module DTK
       require_relative('client/args')
       require_relative('client/module_ref')
       require_relative('client/module_dir')
+      require_relative('client/file_helper')
     end
   end
 end

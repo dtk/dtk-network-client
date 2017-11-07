@@ -1,8 +1,5 @@
 module DTK::Network::Client
   class GitClient
-    # TODO: move dtkn methods to Internal::Dtkn; might make also Internal::DtkServer class
-
-    # Git Params for dtk server
     module Dtk_Server
       GIT_REMOTE   = 'dtk-server'
     end
