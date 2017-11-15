@@ -52,6 +52,9 @@ module DTK::Network::Client
           key: file_key
         })
         resp
+
+        branch_id = branch['id']
+        rest_post("modules/update_status", { branch_id: branch_id, status: 'published' })
       end
 
       def create_tar_gz(published)
