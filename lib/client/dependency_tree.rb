@@ -17,13 +17,14 @@ module DTK::Network
         @activated        = Activated.new
         @cache            = Cache.new
         @opts             = opts
+        @parsed_module    = opts[:parsed_module]
       end
 
       def self.get_dependency_tree(module_ref, opts = {})
         if content = FileHelper.get_content?("#{module_ref.repo_dir}/#{LOCK_FILE}")
           ret_as_module_refs(YAML.load(content))
         else
-          ret_as_module_refs(compute_and_save(module_ref, opts = {}))
+          ret_as_module_refs(compute_and_save(module_ref, opts))
         end
       end
 
@@ -38,7 +39,7 @@ module DTK::Network
       end
 
       def compute
-        dtkn_dependencies = ret_dtkn_dependencies
+        dtkn_dependencies = ret_dependencies
 
         dependencies = dtkn_dependencies['dependencies'].map do |pm_ref|
           ModuleRef::Dependency.new({ name: pm_ref['module'], namespace: pm_ref['namespace'], version: pm_ref['version'] })
@@ -54,7 +55,7 @@ module DTK::Network
         dependencies.each do |dependency|
           next if @activated.module_activated?(dependency)
 
-          dtkn_versions_w_deps_hash = dtkn_versions_with_dependencies(dependency)
+          dtkn_versions_w_deps_hash = dtkn_versions_with_dependencies(dependency)['versions_w_deps']
           dtkn_versions_w_deps      = dtkn_versions_w_deps_hash.map { |v| v['version'] }
 
           version_obj       = dependency.version
@@ -76,14 +77,20 @@ module DTK::Network
         end
       end
 
-      def ret_dtkn_dependencies
-        dtkn_dependencies = rest_get('modules/dependencies_for_name', { name: @module_ref.name, namespace: @module_ref.namespace, version: @module_ref.version })
-        JSON.parse(dtkn_dependencies)
+      def ret_dependencies
+        if @parsed_module
+          ret = { 'dependencies' => [] }
+          (@parsed_module.val(:DependentModules) || []).map do |parsed_mr|
+            ret['dependencies'] << { 'namespace' => parsed_mr.req(:Namespace), 'module' => parsed_mr.req(:ModuleName), 'version' => parsed_mr.val(:ModuleVersion) }
+          end
+          ret
+        else
+          rest_get('modules/dependencies_for_name', { name: @module_ref.name, namespace: @module_ref.namespace, version: @module_ref.version })
+        end
       end
 
       def dtkn_versions_with_dependencies(module_ref)
-        all_dtkn_dependency_versions = rest_get("modules/get_versions_with_dependencies", { name: module_ref.name, namespace: module_ref.namespace })
-        JSON.parse(all_dtkn_dependency_versions)
+        rest_get("modules/get_versions_with_dependencies", { name: module_ref.name, namespace: module_ref.namespace })
       end
 
       def self.ret_as_module_refs(dep_modules)

@@ -2,23 +2,30 @@ module DTK::Network
   module Client
     class Conn
       def initialize
-        @cookies = {}
+        @cookies          = {}
+        @connection_error = nil
         login
       end
 
-      attr_reader :cookies
+      attr_reader :cookies, :connection_error
 
       def get(route, query_string_hash = {})
-        url = rest_url(route)
-        get_raw(url, query_string_hash)
+        check_and_wrap_response { json_parse_if_needed(get_raw(rest_url(route), query_string_hash)) }
       end
 
       def post(route, post_body = {})
-        url = rest_url(route)        
-        post_raw(url, post_body)
+        check_and_wrap_response { json_parse_if_needed(post_raw(rest_url(route), post_body)) }
+      end
+
+      def connection_error?
+        !connection_error.nil?
       end
 
       private
+
+      def error_code?
+        connection_error['errors'].first['code'] rescue nil
+      end
 
       REST_VERSION = 'v1'
       REST_PREFIX = "api/#{REST_VERSION}"
@@ -31,9 +38,30 @@ module DTK::Network
         @@rest_url_base ||= Config.get_endpoint
       end
 
+      def check_and_wrap_response(&rest_method_func)
+        response = rest_method_func.call
+
+        # if Response::ErrorHandler.check_for_session_expiried(response)
+        #   # re-logging user and repeating request
+        #   OsUtil.print_warning("Session expired: re-establishing session & re-trying request ...")
+        #   @cookies = Session.re_initialize
+        #   response = rest_method_func.call
+        # end
+
+        response_obj = Response.new(response)
+
+        # queue messages from server to be displayed later
+        #TODO: DTK-2554: put in processing of messages Shell::MessageQueue.process_response(response_obj)
+        response_obj
+      end
+
       def login
         response = post_raw rest_url('auth/sign_in'), get_credentials
-        @cookies = response.cookies
+        if response.kind_of?(::DTK::Common::Response) and !response.ok?
+          @connection_error = response
+        else
+          @cookies = response.cookies
+        end
       end
 
       def logout
@@ -59,13 +87,17 @@ module DTK::Network
           :verify_ssl => OpenSSL::SSL::VERIFY_PEER
         }
       end
-      
+
       def get_raw(url, query_string_hash = {})
-        RestClient::Resource.new(url, default_rest_opts.merge(cookies: @cookies)).get(params: query_string_hash)
+        Response::RestClientWrapper.get_raw(url, query_string_hash, default_rest_opts.merge(:cookies => @cookies))
       end
 
-      def post_raw(url, post_body)
-        RestClient::Resource.new(url, default_rest_opts.merge(cookies: @cookies)).post(post_body)
+      def post_raw(url, post_body, params = {})
+        Response::RestClientWrapper.post_raw(url, post_body, default_rest_opts.merge(:cookies => @cookies).merge(params))
+      end
+
+      def json_parse_if_needed(item)
+        Response::RestClientWrapper.json_parse_if_needed(item)
       end
     end
   end
