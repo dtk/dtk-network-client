@@ -22,6 +22,18 @@ module DTK::Network::Client
           # else
           # print installing
           # aaa = rest_get('modules/get_module_info', { name: 'modA', namespace: module_ref.namespace })
+
+        # {"namespace"=>"modwork","module"=>"ec2","version"=>"~> 0.1.0"}
+        # {"namespace"=>"modwork","module"=>"apt","version"=>"<= 0.1.3"}
+        # {"namespace"=>"modwork","module"=>"mysql","version"=>"0.4.2"}
+        # {"namespace"=>"modwork","module"=>"rds","version"=>"~> 0.0.5"}
+
+        # concat: master
+        # puppet/nginx: master
+        # ec2-0.1.9
+        # apt-0.1.3
+        # mysql-0.4.2
+        # rds-0.0.9
         end
       end
     end
