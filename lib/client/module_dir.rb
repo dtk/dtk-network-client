@@ -28,6 +28,12 @@ module DTK::Network::Client
       File.open(file_path, 'w') { |f| f << content }
     end
 
+    def self.create_tar_gz(gzip_name, target_dir, source_dir_or_file = '.')
+      target = "#{target_dir}/#{gzip_name}.tar.gz"
+      `tar -czf #{target} #{source_dir_or_file}`
+      target
+    end
+
   end
 end
 

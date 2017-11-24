@@ -16,9 +16,9 @@ module DTK::Network::Client
       end
 
       def publish
-        c_module = rest_post('modules/create_by_name', { name: @module_ref.name, namespace: @module_ref.namespace })
+        module_info = rest_post('modules/create_by_name', { name: @module_ref.name, namespace: @module_ref.namespace })
 
-        module_id    = c_module['id']
+        module_id    = module_info['id']
         dependencies = []
 
         if @parsed_module
@@ -28,36 +28,41 @@ module DTK::Network::Client
         end
 
         branch = rest_post("modules/#{module_id}/branch", { version: @module_ref.version, dependencies: dependencies.to_json })
+        repo_url = module_info.dig('meta', 'aws', 'codecommit', 'repository_metadata', 'clone_url_http')
+        codecommit_data = Session.get_codecommit_data
 
-        published = rest_post("modules/#{module_id}/publish", { version: @module_ref.version })
-        published
+        git_args = Args.new({
+          repo_dir: @module_directory,
+          branch: branch['name'],
+          remote_url: repo_url
+        })
+        GitRepo.init_and_publish_to_remote(git_args)
 
-        gzip_name = create_tar_gz(published)
+        published_response = rest_post("modules/#{module_id}/publish", { version: @module_ref.version })
+        bucket, object_name = ret_s3_bucket_info(published_response)
+        tar_gz_file_location = ModuleDir.create_tar_gz(object_name.gsub(/([\/|\.])/,'__'), @module_directory)
 
-        upload_file_location = "#{@module_directory}/#{gzip_name}"
-        published_creds = published['publish_credentails']
+        published_creds = published_response['publish_credentails']
 
-        require 'aws-sdk'
-        bucket = 'dtkn-dev-catalog'
-        file_key = gzip_name.gsub('__','/')
-        s3 = Aws::S3::Client.new(
+        s3_args = Args.new({
           region: 'us-east-1',
           access_key_id: published_creds['access_key_id'],
           secret_access_key: published_creds['secret_access_key'],
           session_token: published_creds['session_token']
-        )
-        resp = s3.put_object({
-          body: upload_file_location,
-          bucket: bucket,
-          key: file_key
         })
-        resp
+        storage = Storage.new(:s3, s3_args)
+        upload_args = Args.new({
+          body: tar_gz_file_location,
+          bucket: bucket,
+          key: object_name
+        })
+        storage.upload(upload_args)
 
         branch_id = branch['id']
         rest_post("modules/update_status", { branch_id: branch_id, status: 'published' })
       end
 
-      def create_tar_gz(published)
+      def create_and_ret_tar_gz(published)
         s3_locaction = 'https://s3.amazonaws.com/dtkn-dev-catalog/'
 
         if branch = published['branch']
@@ -70,50 +75,32 @@ module DTK::Network::Client
           end
 
           if gzip_name
-            # `tar -czf #{gzip_name} #{file_name}`
-            `tar czf #{gzip_name.gsub!('/','__')} .`
+            ModuleDir.create_tar_gz(gzip_name, @module_directory)
             gzip_name
           end
         end
       end
 
-      # def create_tar_gz(published)
-      #   require 'rubygems/package'
-      #   s3_locaction = 'https://s3.amazonaws.com/dtkn-dev-catalog/'
+      def ret_s3_bucket_info(published)
+        branch = published['branch'] || {}
+        bucket = nil
+        object_name = nil
 
-      #   if branch = published['branch']
-      #     meta = branch['meta']
-      #     catalog_uri = meta['catalog_uri']
-      #     gzip_name = nil
-          
-      #     if match = catalog_uri.match(/(#{s3_locaction})(.)/)
-      #       gzip_name = match[2]
-      #     end
+        if meta = branch['meta']
+          catalog_uri = meta['catalog_uri']
+          if match = catalog_uri.match(/.*amazonaws.com\/([^\/]*)\/(.*.gz)/)
+            bucket = match[1]
+            object_name = match[2]
+          end
+        else
+          raise "Unexpected that publish response does not contain branch metadata!"
+        end
 
-      #     if gzip_name
-      #       File.open("#{gzip_name}", "wb") do |file|
-      #         Zlib::GzipWriter.wrap(file) do |gz|
-      #           Gem::Package::TarWriter.new(gz) do |tar|
-      #             awesome_stuff = "This is awesome!\n"
-      #             tar.add_file_simple("awesome/stuff.txt",
-      #               0444, awesome_stuff.length
-      #             ) do |io|
-      #               io.write(awesome_stuff)
-      #             end
-            
-      #             more_awesome = "This is awesome, too!\n"
-      #             tar.add_file_simple("more/awesome.txt",
-      #               0444, more_awesome.length
-      #             ) do |io|
-      #               io.write(more_awesome)
-      #             end
-      #           end
-      #         end
-      #       end
-      #     end
-      #   end
+        raise "Unable to extract bucket and/or object name data from catalog_uri!" if bucket.nil? || object_name.nil?
 
-      # end
+        return [bucket, object_name]
+      end
+
     end
   end
 end

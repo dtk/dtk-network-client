@@ -69,7 +69,7 @@ module DTK::Network
           latest_version_dep = ModuleRef::Dependency.new({ name: dependency.name, namespace: dependency.namespace, version: latest_version })
 
           @activated.add!(latest_version_dep)
-          # @candidates.add!(dependency, versions_in_range)
+          @candidates.add!(dependency, versions_in_range)
 
           dtkn_deps_of_deps = dtkn_versions_w_deps_hash.find {|dep| dep['version'].eql?(latest_version) }
           dtkn_deps_of_deps_objs = (dtkn_deps_of_deps['dependencies'] || {}).map do |dtkn_dep|

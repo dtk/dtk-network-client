@@ -4,10 +4,11 @@ module DTK::Network
       def initialize
         @cookies          = {}
         @connection_error = nil
+        @codecommit       = nil
         login
       end
 
-      attr_reader :cookies, :connection_error
+      attr_reader :cookies, :connection_error, :codecommit
 
       def get(route, query_string_hash = {})
         check_and_wrap_response { json_parse_if_needed(get_raw(rest_url(route), query_string_hash)) }
@@ -61,6 +62,7 @@ module DTK::Network
           @connection_error = response
         else
           @cookies = response.cookies
+          set_codecommit_info(response)
         end
       end
 
@@ -71,7 +73,6 @@ module DTK::Network
         @cookies = nil
       end
 
-      
       def get_credentials
         @parsed_credentials ||= Config.get_credentials
       end
@@ -98,6 +99,13 @@ module DTK::Network
 
       def json_parse_if_needed(item)
         Response::RestClientWrapper.json_parse_if_needed(item)
+      end
+
+      def set_codecommit_info(response)
+        json_response = json_parse_if_needed(response)
+        if codecommit_data = json_response.dig('data', 'meta', 'aws', 'codecommit')
+          @codecommit = codecommit_data
+        end
       end
     end
   end

@@ -6,6 +6,10 @@ module DTK::Network
 
       include RestWrapper
       extend RestWrapper
+
+      def self.wrap_command(args = Args.new, &block)
+        block.call(Args.convert(args))
+      end
     end
   end
 end

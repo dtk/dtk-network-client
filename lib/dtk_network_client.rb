@@ -10,8 +10,6 @@ module DTK
       require_relative('client/rest_wrapper')
       require_relative('client/command')
       require_relative('client/response')
-      # require_relative('client/install')
-      # require_relative('client/publish')
       require_relative('client/dependency_tree')
       require_relative('client/conn')
       require_relative('client/session')
@@ -20,6 +18,8 @@ module DTK
       require_relative('client/module_dir')
       require_relative('client/file_helper')
       require_relative('client/error')
+      require_relative('client/client_args')
+      require_relative('client/storage')
     end
   end
 end

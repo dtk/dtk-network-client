@@ -60,7 +60,7 @@ module DTK::Network
           op.split("\n")
         end
       end
-      
+
       # opts can have keys
       #  :branch
       def initialize(repo_dir, opts = {})

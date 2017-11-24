@@ -41,6 +41,10 @@ module DTK::Network
         instance.conn.get(route, opts)
       end
 
+      def self.get_codecommit_data
+        instance.conn.codecommit
+      end
+
     end
   end
 end
