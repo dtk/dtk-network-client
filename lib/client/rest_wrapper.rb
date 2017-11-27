@@ -16,11 +16,18 @@ module DTK::Network::Client
 
     def raise_error_if_notok_response(&block)
       response = block.call
-      # if response.ok?
+      if response
+        status = response['status']
+        if status
+          raise Error.new(response) if status.eql?('notok')
+          # response
+        # else
+          # Response::Ok.new(response)
+        end
         response
-      # else
-        # raise Error.new(response)
-      # end
+      else
+        raise Error.new(response)
+      end
     end
   end
 end
