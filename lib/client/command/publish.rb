@@ -16,7 +16,7 @@ module DTK::Network::Client
       end
 
       def publish
-        module_info = rest_post('modules/create_by_name', { name: @module_ref.name, namespace: @module_ref.namespace })
+        module_info = rest_post('modules', { name: @module_ref.name, namespace: @module_ref.namespace })
 
         module_id    = module_info['id']
         dependencies = []

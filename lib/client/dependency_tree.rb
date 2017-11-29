@@ -86,14 +86,14 @@ module DTK::Network
             { 'namespace' => parsed_mr.req(:Namespace), 'module' => parsed_mr.req(:ModuleName), 'version' => parsed_mr.val(:ModuleVersion) }
           end
         else
-          response = rest_get('modules/dependencies_for_name', { name: @module_ref.name, namespace: @module_ref.namespace, version: @module_ref.version })
+          response = rest_get("modules/#{@module_ref.name}/dependencies", { name: @module_ref.name, namespace: @module_ref.namespace, version: @module_ref.version })
           response['dependencies']
         end
       end
 
       def dtkn_versions_with_dependencies(module_ref)
         response = rest_get("modules/get_versions_with_dependencies", { name: module_ref.name, namespace: module_ref.namespace })
-        response['versions_w_deps']
+        response['versions']
       end
 
       def check_for_conflicts(dependency)

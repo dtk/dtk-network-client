@@ -11,7 +11,7 @@ module DTK::Network::Client
 
       def self.run(module_info, opts = {})
         module_ref      = ModuleRef.new(module_info)
-        dependency_tree = DependencyTree.get_dependency_tree(module_ref, opts)
+        dependency_tree = DependencyTree.compute_and_save_to_file(module_ref, opts)
         new(module_ref, dependency_tree, opts).install
       end
 
