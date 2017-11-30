@@ -16,8 +16,7 @@ module DTK::Network::Client
       end
 
       def publish
-        module_info = rest_post('modules', { name: @module_ref.name, namespace: @module_ref.namespace })
-
+        module_info  = rest_post('modules', { name: @module_ref.name, namespace: @module_ref.namespace, return_if_exists: true })
         module_id    = module_info['id']
         dependencies = []
 
@@ -27,7 +26,7 @@ module DTK::Network::Client
           end
         end
 
-        branch = rest_post("modules/#{module_id}/branch", { version: @module_ref.version, dependencies: dependencies.to_json })
+        branch   = rest_post("modules/#{module_id}/branch", { version: @module_ref.version, dependencies: dependencies.to_json })
         repo_url = ret_codecommit_url(module_info)
 
         git_args = Args.new({
@@ -37,11 +36,10 @@ module DTK::Network::Client
         })
         GitRepo.init_and_publish_to_remote(git_args)
 
-        published_response = rest_post("modules/#{module_id}/publish", { version: @module_ref.version })
-        bucket, object_name = ret_s3_bucket_info(published_response)
+        published_response   = rest_post("modules/#{module_id}/publish", { version: @module_ref.version })
+        bucket, object_name  = ret_s3_bucket_info(published_response)
         tar_gz_file_location = ModuleDir.create_tar_gz(object_name.gsub(/([\/|\.])/,'__'), @module_directory)
-
-        published_creds = published_response['publish_credentails']
+        published_creds      = published_response['publish_credentails']
 
         s3_args = Args.new({
           region: 'us-east-1',
