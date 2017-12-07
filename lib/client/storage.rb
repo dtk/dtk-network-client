@@ -9,6 +9,10 @@ module DTK::Network::Client
       @adapter.upload(data)
     end
 
+    def download(data, opts = {})
+      @adapter.download(data, opts)
+    end
+
     private
 
     def adapter_class(adapter)

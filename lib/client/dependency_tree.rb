@@ -22,11 +22,15 @@ module DTK::Network
       end
 
       def self.get_dependency_tree(module_ref, opts = {})
-        if content = FileHelper.get_content?("#{module_ref.repo_dir}/#{LOCK_FILE}")
-          ret_as_module_refs(YAML.load(content))
+        content = nil
+
+        if yaml_content = FileHelper.get_content?("#{module_ref.repo_dir}/#{LOCK_FILE}")
+          content = YAML.load(yaml_content)
         else
-          ret_as_module_refs(compute_and_save_to_file(module_ref, opts))
+          content = compute_and_save_to_file(module_ref, opts)
         end
+
+        ret_required_format(content, opts[:format])
       end
 
       def self.compute_and_save_to_file(module_ref, opts = {})
@@ -110,6 +114,28 @@ module DTK::Network
         namespace, name = full_name.split('/')
         ModuleRef.new({ namespace: namespace, name: name, version: version_hash[:version] })
       end
+
+      def self.ret_as_hash(dep_modules)
+        dep_modules.map { |k,v| create_module_hash(k, v) }
+      end
+
+      def self.create_module_hash(full_name, version_hash)
+        namespace, name = full_name.split('/')
+        { namespace: namespace, name: name, version: version_hash[:version] }
+      end
+
+      def self.ret_required_format(content, format)
+        format ||= :module_ref
+        case format.to_sym
+        when :module_ref
+          ret_as_module_refs(content)
+        when :hash
+          ret_as_hash(content)
+        else
+          raise Error.new("Unsupported format '#{format}'. Valid formats are '#{ValidFormats.join(', ')}'")
+        end
+      end
+      ValidFormats = [:module_ref, :hash]
 
     end
   end

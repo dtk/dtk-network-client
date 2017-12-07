@@ -49,11 +49,12 @@ module DTK::Network
         #   response = rest_method_func.call
         # end
 
-        response_obj = Response.new(response)
+
+        # response_obj = Response.new(response)
 
         # queue messages from server to be displayed later
         #TODO: DTK-2554: put in processing of messages Shell::MessageQueue.process_response(response_obj)
-        response_obj
+        # response_obj
       end
 
       def login

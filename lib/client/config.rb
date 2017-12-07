@@ -1,8 +1,11 @@
 require 'fileutils'
 
 module DTK::Network::Client
-  module Config
-    DTK_NETWORK_CONFIG = File.join("/home/ubuntu/dtk/", '.dtk_network')
+  class Config
+    extend DTK::Network::Client::Util::OsUtil
+
+    DTK_NETWORK_FILE   = '.dtk_network'
+    DTK_NETWORK_CONFIG = File.join(dtk_local_folder, DTK_NETWORK_FILE)
 
     def self.get_credentials
       raise "Dtk network config file (#{DTK_NETWORK_CONFIG}) does not exist" unless File.exists?(DTK_NETWORK_CONFIG)

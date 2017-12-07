@@ -11,7 +11,7 @@ module DTK::Network::Client
 
       def self.run(module_info, opts = {})
         module_ref      = ModuleRef.new(module_info)
-        dependency_tree = DependencyTree.compute_and_save_to_file(module_ref, opts)
+        dependency_tree = DependencyTree.get_dependency_tree(module_ref, opts)
         new(module_ref, dependency_tree, opts).publish
       end
 
@@ -36,10 +36,10 @@ module DTK::Network::Client
         })
         GitRepo.init_and_publish_to_remote(git_args)
 
-        published_response   = rest_post("modules/#{module_id}/publish", { version: @module_ref.version })
-        bucket, object_name  = ret_s3_bucket_info(published_response)
-        tar_gz_file_location = ModuleDir.create_tar_gz(object_name.gsub(/([\/|\.])/,'__'), @module_directory)
-        published_creds      = published_response['publish_credentails']
+        published_response  = rest_post("modules/#{module_id}/publish", { version: @module_ref.version })
+        bucket, object_name = ret_s3_bucket_info(published_response)
+        gz_body             = ModuleDir.create_and_ret_tar_gz(@module_directory)
+        published_creds     = published_response['publish_credentails']
 
         s3_args = Args.new({
           region: 'us-east-1',
@@ -48,8 +48,9 @@ module DTK::Network::Client
           session_token: published_creds['session_token']
         })
         storage = Storage.new(:s3, s3_args)
+
         upload_args = Args.new({
-          body: tar_gz_file_location,
+          body: gz_body,
           bucket: bucket,
           key: object_name
         })

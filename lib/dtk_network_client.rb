@@ -4,6 +4,7 @@ require 'rest-client'
 module DTK
   module Network
     module Client
+      require_relative('client/util')
       require_relative('client/config')
       require_relative('client/git_repo')
       require_relative('client/git_client')

@@ -11,6 +11,10 @@ module DTK::Network::Client
         def upload(data_hash)
           @s3.put_object(data_hash)
         end
+
+        def download(data_hash, opts = {})
+          @s3.get_object(data_hash, opts)
+        end
       end
     end
   end

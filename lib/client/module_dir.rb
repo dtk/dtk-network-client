@@ -3,13 +3,7 @@ require 'fileutils'
 module DTK::Network::Client
   # Operations for managing module folders
   class ModuleDir
-    # def self.local_dir_exists?(type, name, opts = {})
-    #   File.exists?("#{base_path(type)}/#{name}")
-    # end
-
-    # def self.ret_base_path(type, name)
-    #   "#{base_path(type)}/#{name}"
-    # end
+    extend DTK::Network::Client::Util::Tar
 
     def self.ret_path_with_current_dir(name)
       "#{Dir.getwd}/#{name.gsub(':','/')}"
@@ -28,10 +22,15 @@ module DTK::Network::Client
       File.open(file_path, 'w') { |f| f << content }
     end
 
-    def self.create_tar_gz(gzip_name, target_dir, source_dir_or_file = '.')
-      target = "#{target_dir}/#{gzip_name}.tar.gz"
-      `tar -czf #{target} #{source_dir_or_file}`
-      target
+    def self.create_and_ret_tar_gz(source_dir)
+      raise Error.new("Directory '#{source_dir}' does not exist!") unless Dir.exist?(source_dir)
+      gzip(tar(source_dir))
+    end
+
+    def self.ungzip_and_untar(file, target_dir)
+      raise Error.new("File '#{file}' does not exist!") unless File.exist?(file)
+      FileUtils.mkdir_p(target_dir)
+      untar(ungzip(File.open(file, "rb")), target_dir)
     end
 
   end

@@ -1,6 +1,8 @@
 module DTK::Network::Client
   class Command
     class Install < self
+      include DTK::Network::Client::Util::Tar
+
       def initialize(module_ref, dependency_tree, options = {})
         @module_ref       = module_ref
         @dependency_tree  = dependency_tree
@@ -11,30 +13,64 @@ module DTK::Network::Client
 
       def self.run(module_info, opts = {})
         module_ref      = ModuleRef.new(module_info)
-        dependency_tree = DependencyTree.compute_and_save_to_file(module_ref, opts)
+        dependency_tree = DependencyTree.get_dependency_tree(module_ref, opts.merge(format: :hash))
         new(module_ref, dependency_tree, opts).install
       end
 
       def install
-        @dependency_tree.each do |dep_mod|
-          # check if exist on server
-          # if true - ask for pull-dtkn
-          # else
-          # print installing
-          # aaa = rest_get('modules/get_module_info', { name: 'modA', namespace: module_ref.namespace })
+        module_list = @dependency_tree
+        module_list << { namespace: @module_ref.namespace, name:@module_ref.name, version: @module_ref.version }
 
-        # {"namespace"=>"modwork","module"=>"ec2","version"=>"~> 0.1.0"}
-        # {"namespace"=>"modwork","module"=>"apt","version"=>"<= 0.1.3"}
-        # {"namespace"=>"modwork","module"=>"mysql","version"=>"0.4.2"}
-        # {"namespace"=>"modwork","module"=>"rds","version"=>"~> 0.0.5"}
+        modules_info = rest_get('modules/install', { module_list: module_list.to_json })
 
-        # concat: master
-        # puppet/nginx: master
-        # ec2-0.1.9
-        # apt-0.1.3
-        # mysql-0.4.2
-        # rds-0.0.9
+        (modules_info || []).each do |dependency_modules|
+          module_list = dependency_modules['module_list']
+          credentials = dependency_modules.dig('credentails', 'credentials')
+
+          raise Error.new('Unexpected that repoman did not return any credentials') unless credentials
+
+          s3_args = Args.new({
+            region: 'us-east-1',
+            access_key_id: credentials['access_key_id'],
+            secret_access_key: credentials['secret_access_key'],
+            session_token: credentials['session_token']
+          })
+          storage = Storage.new(:s3, s3_args)
+
+          module_list.each do |module_info|
+            bucket, object_name = ret_s3_bucket_info(module_info)
+            object_name_on_disk = object_name.gsub(/([\/])/,'__')
+            object_location_on_disk = "/home/ubuntu/dtk/modules/download_location/#{object_name_on_disk}"
+            download_args = Args.new({
+              response_target: object_location_on_disk,
+              bucket: bucket,
+              key: object_name,
+              response_content_encoding: "gzip"
+            })
+
+            resp = storage.download(download_args)
+            ModuleDir.ungzip_and_untar(object_location_on_disk, "/home/ubuntu/dtk/modules/download_location/")
+          end
         end
+      end
+
+      def ret_s3_bucket_info(module_info)
+        bucket = nil
+        object_name = nil
+
+        if meta = module_info['meta']
+          catalog_uri = meta['catalog_uri']
+          if match = catalog_uri.match(/.*amazonaws.com\/([^\/]*)\/(.*.gz)/)
+            bucket = match[1]
+            object_name = match[2]
+          end
+        else
+          raise "Unexpected that publish response does not contain metadata!"
+        end
+
+        raise "Unable to extract bucket and/or object name data from catalog_uri!" if bucket.nil? || object_name.nil?
+
+        return [bucket, object_name]
       end
     end
   end
