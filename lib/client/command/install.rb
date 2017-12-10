@@ -49,7 +49,11 @@ module DTK::Network::Client
             })
 
             resp = storage.download(download_args)
-            ModuleDir.ungzip_and_untar(object_location_on_disk, "/home/ubuntu/dtk/modules/download_location/")
+            install_location = "/home/ubuntu/dtk/modules/download_location/#{@module_ref.namespace}/#{@module_ref.name}-#{@module_ref.version}"
+
+            resp = storage.download(download_args)
+            ModuleDir.ungzip_and_untar(object_location_on_disk, install_location)
+            print "Module installed in '#{install_location}'."
           end
         end
       end
