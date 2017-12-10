@@ -24,7 +24,7 @@ module DTK::Network::Client
         modules_info = rest_get('modules/install', { module_list: module_list.to_json })
 
         (modules_info || []).each do |dependency_modules|
-          module_list = dependency_modules['module_list']
+          dep_module_list = dependency_modules['module_list']
           credentials = dependency_modules.dig('credentails', 'credentials')
 
           raise Error.new('Unexpected that repoman did not return any credentials') unless credentials
@@ -37,7 +37,7 @@ module DTK::Network::Client
           })
           storage = Storage.new(:s3, s3_args)
 
-          module_list.each do |module_info|
+          dep_module_list.each do |module_info|
             bucket, object_name = ret_s3_bucket_info(module_info)
             object_name_on_disk = object_name.gsub(/([\/])/,'__')
             object_location_on_disk = "/home/ubuntu/dtk/modules/download_location/#{object_name_on_disk}"
@@ -49,9 +49,7 @@ module DTK::Network::Client
             })
 
             resp = storage.download(download_args)
-            install_location = "/home/ubuntu/dtk/modules/download_location/#{@module_ref.namespace}/#{@module_ref.name}-#{@module_ref.version}"
-
-            resp = storage.download(download_args)
+            install_location = "/home/ubuntu/dtk/modules/download_location/#{module_info['namespace']}/#{module_info['name']}-#{module_info['version']}"
             ModuleDir.ungzip_and_untar(object_location_on_disk, install_location)
             print "Module installed in '#{install_location}'."
           end
