@@ -19,14 +19,24 @@ module DTK::Network::Client::Util
   module OsUtil
     require 'readline'
 
-    DTK_FOLDER_DIR = 'dtk'
+    DTK_HOME_DIR = 'dtk'
+    DTK_MODULES_DIR = 'modules'
+    DTK_MODULES_GZIP_DIR = '.download_location'
 
     def home_dir
       is_windows? ? home_dir__windows : genv(:home)
     end
 
     def dtk_local_folder
-      "#{home_dir}/#{DTK_FOLDER_DIR}"
+      "#{home_dir}/#{DTK_HOME_DIR}"
+    end
+
+    def dtk_modules_location
+      "#{dtk_local_folder}/#{DTK_MODULES_DIR}"
+    end
+
+    def dtk_modules_gzip_location
+      "#{dtk_local_folder}/#{DTK_MODULES_DIR}/#{DTK_MODULES_GZIP_DIR}"
     end
 
     def temp_dir
