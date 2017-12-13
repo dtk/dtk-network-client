@@ -22,9 +22,9 @@ module DTK::Network::Client
       File.open(file_path, 'w') { |f| f << content }
     end
 
-    def self.create_and_ret_tar_gz(source_dir)
+    def self.create_and_ret_tar_gz(source_dir, opts = {})
       raise Error.new("Directory '#{source_dir}' does not exist!") unless Dir.exist?(source_dir)
-      gzip(tar(source_dir))
+      gzip(tar(source_dir, opts))
     end
 
     def self.ungzip_and_untar(file, target_dir)

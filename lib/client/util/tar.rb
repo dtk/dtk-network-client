@@ -33,11 +33,13 @@ module DTK::Network::Client
       #
       # Returns a StringIO whose underlying String
       # is the contents of the tar file.
-      def tar(path)
+      def tar(path, opts = {})
         tarfile = StringIO.new("")
         Gem::Package::TarWriter.new(tarfile) do |tar|
-          # Dir.glob(File.join('/home/ubuntu/dtk/modules/download_location', "**/*"),File::FNM_DOTMATCH)
-          Dir.glob(File.join(path, "**/*"), File::FNM_DOTMATCH).each do |file|
+          nested_content = Dir.glob(File.join(path, "**/*"), File::FNM_DOTMATCH)
+          nested_content.reject!{ |f_name| f_name.include?('.git')} if opts[:exclude_git]
+
+          nested_content.each do |file|
             mode = File.stat(file).mode
             relative_file = file.sub /^#{Regexp::escape path}\/?/, ''
 

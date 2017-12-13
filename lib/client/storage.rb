@@ -1,5 +1,7 @@
 module DTK::Network::Client
   class Storage
+    attr_reader :adapter
+
     def initialize(adapter, data)
       adapter_clazz = adapter_class(adapter)
       @adapter = adapter_clazz.new(data)

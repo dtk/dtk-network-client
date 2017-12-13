@@ -38,7 +38,7 @@ module DTK::Network::Client
 
         published_response  = rest_post("modules/#{module_id}/publish", { version: @module_ref.version })
         bucket, object_name = ret_s3_bucket_info(published_response)
-        gz_body             = ModuleDir.create_and_ret_tar_gz(@module_directory)
+        gz_body             = ModuleDir.create_and_ret_tar_gz(@module_directory, exclude_git: true)
         published_creds     = published_response['publish_credentails']
 
         s3_args = Args.new({
