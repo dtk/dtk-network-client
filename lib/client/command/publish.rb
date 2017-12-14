@@ -17,7 +17,6 @@ module DTK::Network::Client
 
       def publish
         module_info  = rest_post('modules', { name: @module_ref.name, namespace: @module_ref.namespace, return_if_exists: true })
-        module_id    = module_info['id']
         dependencies = []
 
         if @parsed_module
@@ -26,17 +25,22 @@ module DTK::Network::Client
           end
         end
 
-        branch   = rest_post("modules/#{module_id}/branch", { version: @module_ref.version, dependencies: dependencies.to_json })
-        repo_url = ret_codecommit_url(module_info)
+        if @module_ref.version.is_semantic_version?
+          publish_semantic_version(module_info, dependencies)
+        else
+          publish_named_version(module_info, dependencies)
+        end
+      end
 
-        git_args = Args.new({
-          repo_dir: @module_directory,
-          branch: branch['name'],
-          remote_url: repo_url
-        })
-        GitRepo.init_and_publish_to_remote(git_args)
+      def publish_semantic_version(module_info, dependencies)
+        module_id          = module_info['id']
+        module_ref_version = @module_ref.version
+        branch             = rest_post("modules/#{module_id}/branch", { version: module_ref_version.str_version, dependencies: dependencies.to_json })
+        repo_url           = ret_codecommit_url(module_info)
 
-        published_response  = rest_post("modules/#{module_id}/publish", { version: @module_ref.version })
+        git_init_and_publish_to_remote(branch['name'], repo_url)
+
+        published_response  = rest_post("modules/#{module_id}/publish", { version: module_ref_version.str_version })
         bucket, object_name = ret_s3_bucket_info(published_response)
         gz_body             = ModuleDir.create_and_ret_tar_gz(@module_directory, exclude_git: true)
         published_creds     = published_response['publish_credentails']
@@ -56,8 +60,26 @@ module DTK::Network::Client
         })
         storage.upload(upload_args)
 
-        branch_id = branch['id']
-        rest_post("modules/update_status", { branch_id: branch_id, status: 'published' })
+        rest_post("modules/update_status", { branch_id: branch['id'], status: 'published' })
+      end
+
+      def publish_named_version(module_info, dependencies)
+        module_id = module_info['id']
+        branch    = rest_post("modules/#{module_id}/branch", { version: @module_ref.version.str_version, dependencies: dependencies.to_json })
+        repo_url  = ret_codecommit_url(module_info)
+
+        git_init_and_publish_to_remote(branch['name'], repo_url)
+
+        rest_post("modules/update_status", { branch_id: branch['id'], status: 'published' })
+      end
+
+      def git_init_and_publish_to_remote(branch, repo_url)
+        git_args = Args.new({
+          repo_dir:   @module_directory,
+          branch:     branch,
+          remote_url: repo_url
+        })
+        GitRepo.init_and_publish_to_remote(git_args)
       end
 
       def ret_s3_bucket_info(published)

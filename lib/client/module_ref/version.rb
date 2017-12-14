@@ -29,6 +29,10 @@ module DTK::Network::Client
         match_requirement?(version)
       end
 
+      def is_semantic_version?
+        !!@semantic_version
+      end
+
       private
 
       def match_requirement?(version)

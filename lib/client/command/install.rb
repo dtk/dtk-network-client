@@ -22,7 +22,7 @@ module DTK::Network::Client
         FileUtils.mkdir_p(dtk_modules_gzip_location) unless Dir.exist?(dtk_modules_gzip_location)
 
         module_list = @dependency_tree
-        module_list << { namespace: @module_ref.namespace, name:@module_ref.name, version: @module_ref.version }
+        module_list << { namespace: @module_ref.namespace, name:@module_ref.name, version: @module_ref.version.str_version }
 
         modules_info = rest_get('modules/install', { module_list: module_list.to_json })
         main_module  = ret_main_module_install_info(modules_info)
@@ -99,7 +99,7 @@ module DTK::Network::Client
           break if main_module_info
 
           module_list      = module_info['module_list'] || []
-          main_module_info = module_list.find { |mod_info| mod_info['name'].eql?("#{@module_ref.namespace}/#{@module_ref.name}") && mod_info['version'].eql?(@module_ref.version) }
+          main_module_info = module_list.find { |mod_info| mod_info['name'].eql?("#{@module_ref.namespace}/#{@module_ref.name}") && mod_info['version'].eql?(@module_ref.version.str_version) }
 
           if main_module_info
             module_list.delete(main_module_info)

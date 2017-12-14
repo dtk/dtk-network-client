@@ -20,7 +20,7 @@ module DTK::Network::Client
       private
 
       def index(module_ref)
-        "#{module_ref.module_name}--#{module_ref.namespace}--#{module_ref.version}"
+        "#{module_ref.module_name}--#{module_ref.namespace}--#{module_ref.version.str_version}"
       end
 
     end
