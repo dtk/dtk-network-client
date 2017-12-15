@@ -14,14 +14,14 @@ module DTK::Network::Client
 
       def self.run(module_info, opts = {})
         module_ref      = ModuleRef.new(module_info)
-        dependency_tree = DependencyTree.get_dependency_tree(module_ref, opts.merge(format: :hash))
+        dependency_tree = DependencyTree.get_or_create(module_ref, opts.merge(format: :hash))
         new(module_ref, dependency_tree, opts).install
       end
 
       def install
         FileUtils.mkdir_p(dtk_modules_gzip_location) unless Dir.exist?(dtk_modules_gzip_location)
 
-        module_list = @dependency_tree
+        module_list = @dependency_tree.dup
         module_list << { namespace: @module_ref.namespace, name:@module_ref.name, version: @module_ref.version.str_version }
 
         modules_info = rest_get('modules/install', { module_list: module_list.to_json })
@@ -42,30 +42,19 @@ module DTK::Network::Client
           storage = Storage.new(:s3, s3_args)
 
           dep_module_list.each do |module_info|
-            bucket, object_name = ret_s3_bucket_info(module_info)
-            object_name_on_disk = object_name.gsub(/([\/])/,'__')
-            object_location_on_disk = "#{dtk_modules_gzip_location}/#{object_name_on_disk}"
-            download_args = Args.new({
-              response_target: object_location_on_disk,
-              bucket: bucket,
-              key: object_name,
-              response_content_encoding: "gzip"
-            })
-            storage.download(download_args)
-            install_location = "#{dtk_modules_location}/#{module_info['name']}-#{module_info['version']}"
-
-            ModuleDir.ungzip_and_untar(object_location_on_disk, install_location)
-            FileUtils.remove_entry(object_location_on_disk)
-
-            print "Module installed in '#{install_location}'.\n"
+            if ModuleRef::Version.is_semantic_version?(module_info['version'])
+              install_semantic_version(module_info, storage)
+            else
+              install_named_version(module_info)
+            end
           end
         end
 
         install_main_module(main_module)
       end
 
-      def install_main_module(main_module)
-        credentials = main_module['credentials']
+      def install_main_module(module_info)
+        credentials = module_info['credentials']
         s3_args = Args.new({
           region:           'us-east-1',
           access_key_id:     credentials['access_key_id'],
@@ -74,22 +63,14 @@ module DTK::Network::Client
         })
         storage = Storage.new(:s3, s3_args)
 
-        bucket, object_name = ret_s3_bucket_info(main_module)
-        object_name_on_disk = object_name.gsub(/([\/])/,'__')
-        object_location_on_disk = "#{dtk_modules_gzip_location}/#{object_name_on_disk}"
-        download_args = Args.new({
-          response_target: object_location_on_disk,
-          bucket: bucket,
-          key: object_name,
-          response_content_encoding: "gzip"
-        })
-        storage.download(download_args)
-        install_location = @module_directory#"#{dtk_modules_location}/#{main_module['name']}-#{main_module['version']}"
+        if ModuleRef::Version.is_semantic_version?(module_info['version'])
+          install_semantic_version(module_info, storage, @module_directory)
+        else
+          install_named_version(module_info, @module_directory)
+        end
 
-        ModuleDir.ungzip_and_untar(object_location_on_disk, install_location)
-        FileUtils.remove_entry(object_location_on_disk)
-
-        print "Main module installed in '#{install_location}'.\n"
+        ModuleDir.create_file_with_content("#{@module_directory}/#{DependencyTree::LOCK_FILE}", YAML.dump(@dependency_tree))
+        print "Main module installed in '#{@module_directory}'.\n"
       end
 
       def ret_main_module_install_info(modules_info = [])
@@ -111,6 +92,31 @@ module DTK::Network::Client
         main_module_info
       end
 
+      def install_semantic_version(module_info, storage, target_location = nil)
+        bucket, object_name = ret_s3_bucket_info(module_info)
+        object_name_on_disk = object_name.gsub(/([\/])/,'__')
+        object_location_on_disk = "#{dtk_modules_gzip_location}/#{object_name_on_disk}"
+        download_args = Args.new({
+          response_target: object_location_on_disk,
+          bucket: bucket,
+          key: object_name,
+          response_content_encoding: "gzip"
+        })
+        storage.download(download_args)
+        install_location = target_location || "#{dtk_modules_location}/#{module_info['name']}-#{module_info['version']}"
+
+        ModuleDir.ungzip_and_untar(object_location_on_disk, install_location)
+        FileUtils.remove_entry(object_location_on_disk)
+
+        print "Module installed in '#{install_location}'.\n"
+      end
+
+      def install_named_version(module_info, target_location = nil)
+        codecommit_uri   = construct_clone_url(module_info['codecommit_uri'])#module_info['codecommit_uri']
+        install_location = target_location || "#{dtk_modules_location}/#{module_info['name']}-#{module_info['version']}"
+        GitClient.clone(codecommit_uri, install_location, module_info['version'])
+      end
+
       def ret_s3_bucket_info(module_info)
         bucket = nil
         object_name = nil
@@ -128,6 +134,24 @@ module DTK::Network::Client
         raise "Unable to extract bucket and/or object name data from catalog_uri!" if bucket.nil? || object_name.nil?
 
         return [bucket, object_name]
+      end
+
+      def construct_clone_url(codecommit_uri)
+        require 'open-uri'
+
+        if codecommit_uri # = module_info.dig('meta', 'aws', 'codecommit', 'repository_metadata', 'codecommit_uri')
+          codecommit_data   = Session.get_codecommit_data
+          service_user_name = codecommit_data.dig('service_specific_credential', 'service_user_name')
+          service_password  = codecommit_data.dig('service_specific_credential', 'service_password')
+          encoded_password  = URI.encode_www_form_component(service_password)
+          url = nil
+          if match = codecommit_uri.match(/^(https:\/\/)(.*)$/)
+            url = "#{match[1]}#{service_user_name}:#{encoded_password}@#{match[2]}"
+          end
+          url
+        else
+          raise "Unable to find codecommit https url"
+        end
       end
     end
   end

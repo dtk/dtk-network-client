@@ -9,7 +9,7 @@ module DTK::Network
       def initialize(module_info)
         @name      = module_info[:name]
         @namespace = module_info[:namespace]
-        @version   = Version.new(module_info[:version])
+        @version   = module_info[:version] ? Version.new(module_info[:version]) : nil
         @repo_dir  = module_info[:repo_dir]
         @full_name = "#{@namespace}/#{@name}"
       end

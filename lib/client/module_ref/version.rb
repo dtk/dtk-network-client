@@ -33,6 +33,10 @@ module DTK::Network::Client
         !!@semantic_version
       end
 
+      def self.is_semantic_version?(version)
+        SemVer.parse(version)
+      end
+
       private
 
       def match_requirement?(version)

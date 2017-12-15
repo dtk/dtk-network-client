@@ -21,13 +21,15 @@ module DTK::Network
         @candidates       = Candidates.new
       end
 
-      def self.get_dependency_tree(module_ref, opts = {})
+      def self.get_or_create(module_ref, opts = {})
         content = nil
 
         if yaml_content = FileHelper.get_content?("#{module_ref.repo_dir}/#{LOCK_FILE}")
           content = YAML.load(yaml_content)
-        else
+        elsif opts[:save_to_file]
           content = compute_and_save_to_file(module_ref, opts)
+        else
+          content = compute(module_ref, opts)
         end
 
         ret_required_format(content, opts[:format])
