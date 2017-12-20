@@ -1,6 +1,6 @@
 module DTK::Network::Client
   class Command
-    class Push < self
+    class Pull < self
       def initialize(module_ref, dependency_tree, options = {})
         @module_ref       = module_ref
         @dependency_tree  = dependency_tree
@@ -12,10 +12,10 @@ module DTK::Network::Client
       def self.run(module_info, opts = {})
         module_ref      = ModuleRef.new(module_info)
         dependency_tree = DependencyTree.get_or_create(module_ref, opts.merge(save_to_file: true))
-        new(module_ref, dependency_tree, opts).push
+        new(module_ref, dependency_tree, opts).pull
       end
 
-      def push
+      def pull
         module_info = rest_get('modules/module_info', { name: @module_ref.name, namespace: @module_ref.namespace, version: @module_ref.version.str_version })
         remote_url = construct_remote_url(module_info)
         git_args = Args.new({
@@ -23,7 +23,7 @@ module DTK::Network::Client
           branch:     @module_ref.version.str_version,
           remote_url: remote_url
         })
-        GitRepo.push_to_remote(git_args)
+        GitRepo.pull_from_remote(git_args)
       end
 
       # TODO: move construct_remote_url to helper or mixin and use for all commands when needed

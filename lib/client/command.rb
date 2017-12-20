@@ -5,6 +5,8 @@ module DTK::Network
       require_relative('command/publish')
       require_relative('command/list')
       require_relative('command/info')
+      require_relative('command/push')
+      require_relative('command/pull')
 
       include RestWrapper
       extend RestWrapper

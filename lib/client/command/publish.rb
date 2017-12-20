@@ -79,7 +79,7 @@ module DTK::Network::Client
           branch:     branch,
           remote_url: repo_url
         })
-        GitRepo.init_and_publish_to_remote(git_args)
+        GitRepo.add_remote_and_publish(git_args)
       end
 
       def ret_s3_bucket_info(published)

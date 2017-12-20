@@ -69,7 +69,7 @@ module DTK::Network::Client
           install_named_version(module_info, @module_directory)
         end
 
-        ModuleDir.create_file_with_content("#{@module_directory}/#{DependencyTree::LOCK_FILE}", YAML.dump(@dependency_tree))
+        ModuleDir.create_file_with_content("#{@module_directory}/#{DependencyTree::LOCK_FILE}", YAML.dump(convert_to_module_ref_lock_format(@dependency_tree)))
         print "Main module installed in '#{@module_directory}'.\n"
       end
 
@@ -152,6 +152,10 @@ module DTK::Network::Client
         else
           raise "Unable to find codecommit https url"
         end
+      end
+
+      def convert_to_module_ref_lock_format(dep_tree)
+        dep_tree.inject({}) { |h, dep| h.merge!({ "#{dep[:namespace]}/#{dep[:name]}" => { 'version' => dep[:version] }})}
       end
     end
   end
