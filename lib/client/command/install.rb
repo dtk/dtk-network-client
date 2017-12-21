@@ -10,6 +10,7 @@ module DTK::Network::Client
         @module_directory = module_ref.repo_dir
         @options          = options
         @parsed_module    = options[:parsed_module]
+        @ret              = []
       end
 
       def self.run(module_info, opts = {})
@@ -25,7 +26,6 @@ module DTK::Network::Client
         module_list << { namespace: @module_ref.namespace, name:@module_ref.name, version: @module_ref.version.str_version }
 
         modules_info = rest_get('modules/install', { module_list: module_list.to_json })
-        main_module  = ret_main_module_install_info(modules_info)
 
         (modules_info || []).each do |module_info|
           dep_module_list = module_info['module_list']
@@ -50,7 +50,9 @@ module DTK::Network::Client
           end
         end
 
-        install_main_module(main_module)
+        # return location of all installed modules
+        # if location is always going to be the same for specific module we can remove this
+        @ret
       end
 
       def install_main_module(module_info)
@@ -108,13 +110,18 @@ module DTK::Network::Client
         ModuleDir.ungzip_and_untar(object_location_on_disk, install_location)
         FileUtils.remove_entry(object_location_on_disk)
 
+        @ret << module_info.merge(location: install_location)
         print "Module installed in '#{install_location}'.\n"
       end
 
       def install_named_version(module_info, target_location = nil)
         codecommit_uri   = construct_clone_url(module_info['codecommit_uri'])#module_info['codecommit_uri']
         install_location = target_location || "#{dtk_modules_location}/#{module_info['name']}-#{module_info['version']}"
+
         GitClient.clone(codecommit_uri, install_location, module_info['version'])
+
+        @ret << module_info.merge(location: install_location)
+        print "Module installed in '#{install_location}'.\n"
       end
 
       def ret_s3_bucket_info(module_info)
