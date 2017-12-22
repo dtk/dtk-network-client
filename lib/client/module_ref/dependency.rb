@@ -3,7 +3,7 @@ module DTK::Network::Client
     class Dependency < self
       def initialize(module_info)
         super
-        @version = ModuleRef::Version.new(module_info[:version])
+        @version = ModuleRef::Version.new(module_info[:version]||module_info['version'])
       end
     end
   end

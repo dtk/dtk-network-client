@@ -114,7 +114,8 @@ module DTK::Network
 
       def self.create_module_ref(full_name, version_hash)
         namespace, name = full_name.split('/')
-        ModuleRef.new({ namespace: namespace, name: name, version: version_hash[:version] })
+        version = version_hash[:version] || version_hash['version']
+        ModuleRef.new({ namespace: namespace, name: name, version: version })
       end
 
       def self.ret_as_hash(dep_modules)
@@ -123,7 +124,8 @@ module DTK::Network
 
       def self.create_module_hash(full_name, version_hash)
         namespace, name = full_name.split('/')
-        { namespace: namespace, name: name, version: version_hash[:version] }
+        version = version_hash[:version] || version_hash['version']
+        { namespace: namespace, name: name, version: version }
       end
 
       def self.ret_required_format(content, format)

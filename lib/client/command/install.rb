@@ -162,7 +162,7 @@ module DTK::Network::Client
       end
 
       def convert_to_module_ref_lock_format(dep_tree)
-        dep_tree.inject({}) { |h, dep| h.merge!({ "#{dep[:namespace]}/#{dep[:name]}" => { 'version' => dep[:version] }})}
+        dep_tree.inject({}) { |h, dep| h.merge!({ "#{dep[:namespace]}/#{dep[:name]}" => { 'version' => (dep[:version] || dep['version']) }})}
       end
     end
   end
