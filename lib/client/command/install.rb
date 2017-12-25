@@ -107,6 +107,8 @@ module DTK::Network::Client
         storage.download(download_args)
         install_location = target_location || "#{dtk_modules_location}/#{module_info['name']}-#{module_info['version']}"
 
+        FileUtils.rm_rf(install_location) if Dir.exist?(install_location)
+
         ModuleDir.ungzip_and_untar(object_location_on_disk, install_location)
         FileUtils.remove_entry(object_location_on_disk)
 
