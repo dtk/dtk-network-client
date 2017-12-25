@@ -23,6 +23,7 @@ module DTK::Network
 
       def self.get_or_create(module_ref, opts = {})
         content = nil
+        module_ref = convert_to_module_ref(module_ref) unless module_ref.is_a?(ModuleRef)
 
         if yaml_content = FileHelper.get_content?("#{module_ref.repo_dir}/#{LOCK_FILE}")
           content = YAML.load(yaml_content)
@@ -140,6 +141,10 @@ module DTK::Network
         end
       end
       ValidFormats = [:module_ref, :hash]
+
+      def self.convert_to_module_ref(module_ref)
+        ModuleRef.new(module_ref)
+      end
 
     end
   end
