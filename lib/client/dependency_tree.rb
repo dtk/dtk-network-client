@@ -10,7 +10,7 @@ module DTK::Network
       include RestWrapper
       extend RestWrapper
 
-      LOCK_FILE = "module_ref.lock"
+      LOCK_FILE = "dtk_modules.lock"
 
       def initialize(module_ref, opts = {})
         @module_ref       = module_ref
@@ -79,6 +79,8 @@ module DTK::Network
           @candidates.add!(dependency, versions_in_range)
 
           dtkn_deps_of_deps = dtkn_versions_w_deps_hash.find {|dep| dep['version'].eql?(latest_version) }
+          add_nested_modules(dependency, dtkn_deps_of_deps)
+
           dtkn_deps_of_deps_objs = (dtkn_deps_of_deps['dependencies'] || {}).map do |dtkn_dep|
             ModuleRef::Dependency.new({ name: dtkn_dep['module'], namespace: dtkn_dep['namespace'], version: dtkn_dep['version'] })
           end
@@ -106,6 +108,17 @@ module DTK::Network
       def check_for_conflicts(dependency)
         if activated_mod = @activated.existing_name?(dependency.full_name)
           raise "There is already activated version '#{activated_mod[:version]}' for module '#{dependency.full_name}' and it does not match required version '#{dependency.version.full_version}'"
+        end
+      end
+
+      def add_nested_modules(dependency, dtkn_deps_of_deps)
+        if activated_module = @activated[dependency.full_name]
+          nested_deps = {}
+          (dtkn_deps_of_deps['dependencies'] || []).each{ |dtkn_dep| nested_deps.merge!("#{dtkn_dep['namespace']}/#{dtkn_dep['module']}" => dtkn_dep['version']) }
+
+          unless nested_deps.empty?
+            activated_module.key?('modules') ? activated_module['modules'].merge!(nested_deps) : activated_module.merge!('modules' => nested_deps)
+          end
         end
       end
 
