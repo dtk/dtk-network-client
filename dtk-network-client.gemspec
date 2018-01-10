@@ -15,7 +15,7 @@ Gem::Specification.new do |spec|
   spec.files =  `git ls-files`.split("\n")
 
   spec.add_dependency 'git', '1.2.9'
-  spec.add_dependency 'dtk-common-core', '0.11.0'
+  # spec.add_dependency 'dtk-common-core', '0.11.0'
   spec.add_dependency 'semverly', '~> 1.0'
   spec.add_dependency 'rest-client', '1.6.7'
   spec.add_dependency 'aws-sdk', '~> 3'
