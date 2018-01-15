@@ -9,7 +9,9 @@ module DTK::Network::Client
         remote        = git_args[:remote] || 'origin'
 
         repo = git_repo.new(repo_dir, :branch => local_branch)
-        repo.checkout(local_branch, new_branch: true)
+        create_if_missing = local_branch_exist?(repo, local_branch) ? false : true
+
+        repo.checkout(local_branch, new_branch: create_if_missing)
         repo.add_all
         repo.commit("Publish from dtk client", :allow_empty => true)
         add_remote_and_push(repo, remote, remote_url, remote_branch)
@@ -102,7 +104,7 @@ module DTK::Network::Client
     end
 
     def self.local_branch_exist?(repo, branch)
-      local_branches = repo.all_branches.local || []
+      local_branches = branch.is_a?(String) ? repo.all_branches.local.map { |branch| branch.name } : (repo.all_branches.local || [])
       local_branches.include?(branch)
     end
 
