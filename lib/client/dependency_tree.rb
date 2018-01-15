@@ -10,7 +10,7 @@ module DTK::Network
       include RestWrapper
       extend RestWrapper
 
-      LOCK_FILE = "dtk_modules.lock"
+      LOCK_FILE = "dtk.module.lock"
 
       def initialize(module_ref, opts = {})
         @module_ref       = module_ref
