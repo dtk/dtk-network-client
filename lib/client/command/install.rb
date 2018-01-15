@@ -26,6 +26,7 @@ module DTK::Network::Client
         module_list << { namespace: @module_ref.namespace, name:@module_ref.name, version: @module_ref.version.str_version }
 
         modules_info = rest_get('modules/install', { module_list: module_list.to_json })
+        main_module  = ret_main_module_install_info(modules_info)
 
         (modules_info || []).each do |module_info|
           dep_module_list = module_info['module_list']
@@ -50,8 +51,7 @@ module DTK::Network::Client
           end
         end
 
-        # return location of all installed modules
-        # if location is always going to be the same for specific module we can remove this
+        install_main_module(main_module)
         @ret
       end
 
@@ -65,14 +65,16 @@ module DTK::Network::Client
         })
         storage = Storage.new(:s3, s3_args)
 
+        namespace, name = module_info['name'].split('/')
+        module_location = "#{@module_directory}/#{name}"
         if ModuleRef::Version.is_semantic_version?(module_info['version'])
-          install_semantic_version(module_info, storage, @module_directory)
+          install_semantic_version(module_info, storage, module_location)
         else
-          install_named_version(module_info, @module_directory)
+          install_named_version(module_info, module_location)
         end
 
-        ModuleDir.create_file_with_content("#{@module_directory}/#{DependencyTree::LOCK_FILE}", YAML.dump(convert_to_module_ref_lock_format(@dependency_tree)))
-        print "Main module installed in '#{@module_directory}'.\n"
+        ModuleDir.create_file_with_content("#{module_location}/#{DependencyTree::LOCK_FILE}", YAML.dump(convert_to_module_ref_lock_format(@dependency_tree)))
+        # print "Main module installed in '#{module_location}'.\n"
       end
 
       def ret_main_module_install_info(modules_info = [])
