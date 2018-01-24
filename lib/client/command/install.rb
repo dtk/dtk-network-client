@@ -8,6 +8,7 @@ module DTK::Network::Client
         @module_ref       = module_ref
         @dependency_tree  = dependency_tree
         @module_directory = module_ref.repo_dir
+        @explicit_path    = module_ref.explicit_path
         @options          = options
         @parsed_module    = options[:parsed_module]
         @ret              = []
@@ -66,7 +67,7 @@ module DTK::Network::Client
         storage = Storage.new(:s3, s3_args)
 
         namespace, name = module_info['name'].split('/')
-        module_location = "#{@module_directory}/#{name}"
+        module_location = @explicit_path || "#{@module_directory}/#{name}"
         if ModuleRef::Version.is_semantic_version?(module_info['version'])
           install_semantic_version(module_info, storage, module_location)
         else
