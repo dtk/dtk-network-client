@@ -48,7 +48,9 @@ module DTK::Network
 
       def compute
         dependencies = (ret_dependencies || []).map do |pm_ref|
-          ModuleRef::Dependency.new({ name: pm_ref['module'], namespace: pm_ref['namespace'], version: pm_ref['version'] })
+          ModuleRef::Dependency.create_local_or_remote(pm_ref)
+          # ModuleRef::Dependency.new({ name: pm_ref['module'], namespace: pm_ref['namespace'], version: pm_ref['version'] })
+          # ModuleRef::Dependency.new({ name: pm_ref['module'], namespace: pm_ref['namespace'], version: pm_ref['version'] })
         end
 
         activate_dependencies(dependencies)
