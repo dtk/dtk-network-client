@@ -50,7 +50,6 @@ module DTK::Network
         dependencies = (ret_dependencies || []).map do |pm_ref|
           ModuleRef::Dependency.create_local_or_remote(pm_ref)
           # ModuleRef::Dependency.new({ name: pm_ref['module'], namespace: pm_ref['namespace'], version: pm_ref['version'] })
-          # ModuleRef::Dependency.new({ name: pm_ref['module'], namespace: pm_ref['namespace'], version: pm_ref['version'] })
         end
 
         activate_dependencies(dependencies)
@@ -65,7 +64,8 @@ module DTK::Network
 
           check_for_conflicts(dependency)
 
-          dtkn_versions_w_deps_hash = dtkn_versions_with_dependencies(dependency)
+          # dtkn_versions_w_deps_hash = dtkn_versions_with_dependencies(dependency)
+          dtkn_versions_w_deps_hash = dependency.dtkn_versions_with_dependencies
           dtkn_versions_w_deps = dtkn_versions_w_deps_hash.map { |v| v['version'] }
 
           version_obj = dependency.version
@@ -75,7 +75,12 @@ module DTK::Network
 
           versions_in_range.sort!
           latest_version = versions_in_range.last
-          latest_version_dep = ModuleRef::Dependency.new({ name: dependency.name, namespace: dependency.namespace, version: latest_version })
+
+          if dependency.is_a?(ModuleRef::Dependency::Local)
+            latest_version_dep = dependency
+          else
+            latest_version_dep = ModuleRef::Dependency::Remote.new({ name: dependency.name, namespace: dependency.namespace, version: latest_version })
+          end
 
           @activated.add!(latest_version_dep)
           @candidates.add!(dependency, versions_in_range)
@@ -84,7 +89,7 @@ module DTK::Network
           add_nested_modules(dependency, dtkn_deps_of_deps)
 
           dtkn_deps_of_deps_objs = (dtkn_deps_of_deps['dependencies'] || {}).map do |dtkn_dep|
-            ModuleRef::Dependency.new({ name: dtkn_dep['module'], namespace: dtkn_dep['namespace'], version: dtkn_dep['version'] })
+            ModuleRef::Dependency.create_local_or_remote({ name: dtkn_dep['module'], namespace: dtkn_dep['namespace'], version: dtkn_dep['version'] })
           end
 
           activate_dependencies(dtkn_deps_of_deps_objs, opts)
@@ -116,11 +121,20 @@ module DTK::Network
       def add_nested_modules(dependency, dtkn_deps_of_deps)
         if activated_module = @activated[dependency.full_name]
           nested_deps = {}
-          (dtkn_deps_of_deps['dependencies'] || []).each{ |dtkn_dep| nested_deps.merge!("#{dtkn_dep['namespace']}/#{dtkn_dep['module']}" => dtkn_dep['version']) }
+          (dtkn_deps_of_deps['dependencies'] || []).each{ |dtkn_dep| nested_deps.merge!("#{dtkn_dep['namespace']}/#{dtkn_dep['module']}" => simplify_version(dtkn_dep['version'])) }
 
           unless nested_deps.empty?
             activated_module.key?('modules') ? activated_module['modules'].merge!(nested_deps) : activated_module.merge!('modules' => nested_deps)
           end
+        end
+      end
+
+      def simplify_version(version)
+        if version.is_a?(Hash)
+          # transform custom dtk hash into ruby hash to avoid strange output in yaml file
+          version.to_h
+        else
+          version
         end
       end
 
@@ -141,7 +155,13 @@ module DTK::Network
       def self.create_module_hash(full_name, version_hash)
         namespace, name = full_name.split('/')
         version = version_hash[:version] || version_hash['version']
-        { namespace: namespace, name: name, version: version }
+        ret = { namespace: namespace, name: name, version: version }
+
+        if source = version_hash[:source] || version_hash['source']
+          ret.merge!(source: source)
+        end
+
+        ret
       end
 
       def self.ret_required_format(content, format)

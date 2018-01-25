@@ -4,10 +4,8 @@ module DTK::Network::Client
       require_relative('dependency/local')
       require_relative('dependency/remote')
 
-      # def initialize(module_info)
-      #   super
-      #   @version = ModuleRef::Version.new(module_info[:version]||module_info['version'])
-      # end
+      include RestWrapper
+      extend RestWrapper
 
       def self.create_local_or_remote(module_info)
         version = module_info[:version] || module_info['version']

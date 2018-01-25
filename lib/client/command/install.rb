@@ -12,6 +12,7 @@ module DTK::Network::Client
         @options          = options
         @parsed_module    = options[:parsed_module]
         @ret              = []
+        @type             = options[:type]
       end
 
       def self.run(module_info, opts = {})
@@ -67,11 +68,16 @@ module DTK::Network::Client
         storage = Storage.new(:s3, s3_args)
 
         namespace, name = module_info['name'].split('/')
-        module_location = @explicit_path || "#{@module_directory}/#{name}"
+        module_location = nil
+
+        unless @type == :dependency
+          module_location = @explicit_path || "#{@module_directory}/#{name}"
+        end
+
         if ModuleRef::Version.is_semantic_version?(module_info['version'])
-          install_semantic_version(module_info, storage, module_location)
+          module_location = install_semantic_version(module_info, storage, module_location)
         else
-          install_named_version(module_info, module_location)
+          module_location = install_named_version(module_info, module_location)
         end
 
         ModuleDir.create_file_with_content("#{module_location}/#{DependencyTree::LOCK_FILE}", YAML.dump(convert_to_module_ref_lock_format(@dependency_tree)))
@@ -117,6 +123,7 @@ module DTK::Network::Client
 
         @ret << module_info.merge(location: install_location)
         print "Module installed in '#{install_location}'.\n"
+        install_location
       end
 
       def install_named_version(module_info, target_location = nil)
@@ -127,6 +134,7 @@ module DTK::Network::Client
 
         @ret << module_info.merge(location: install_location)
         print "Module installed in '#{install_location}'.\n"
+        install_location
       end
 
       def ret_s3_bucket_info(module_info)

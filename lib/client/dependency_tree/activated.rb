@@ -11,7 +11,7 @@ module DTK::Network
         end
 
         def add!(dependency_mod)
-          self.merge!("#{dependency_mod.full_name}" => { 'version' => dependency_mod.version.str_version })
+          self.merge!("#{dependency_mod.full_name}" => generate_content(dependency_mod))
         end
 
         def existing_name?(name)
@@ -20,6 +20,14 @@ module DTK::Network
 
         def delete!(dependency_mod)
           self.delete(dependency_mod.full_name)
+        end
+
+        def generate_content(dependency_mod)
+          if dependency_mod.respond_to?(:source)
+            { 'version' => dependency_mod.version.str_version, 'source' => dependency_mod.source }
+          else
+            { 'version' => dependency_mod.version.str_version }
+          end
         end
       end
     end
