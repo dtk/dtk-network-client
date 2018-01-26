@@ -130,6 +130,8 @@ module DTK::Network::Client
         codecommit_uri   = construct_clone_url(module_info['codecommit_uri'])#module_info['codecommit_uri']
         install_location = target_location || "#{dtk_modules_location}/#{module_info['name']}-#{module_info['version']}"
 
+        FileUtils.rm_rf(install_location) if Dir.exist?(install_location)
+
         GitClient.clone(codecommit_uri, install_location, module_info['version'])
 
         @ret << module_info.merge(location: install_location)
