@@ -22,12 +22,15 @@ module DTK::Network
       end
 
       def self.get_or_create(module_ref, opts = {})
-        content = nil
-        module_ref = convert_to_module_ref(module_ref) unless module_ref.is_a?(ModuleRef)
+        content          = nil
+        module_ref       = convert_to_module_ref(module_ref) unless module_ref.is_a?(ModuleRef)
+        update_lock_file = opts[:update_lock_file]
+        yaml_content     = FileHelper.get_content?("#{module_ref.repo_dir}/#{LOCK_FILE}")
 
-        if yaml_content = FileHelper.get_content?("#{module_ref.repo_dir}/#{LOCK_FILE}")
+        if yaml_content && !update_lock_file
           content = YAML.load(yaml_content)
-        elsif opts[:save_to_file]
+          raise_error_if_dependencies_changed!(content, opts[:parsed_module])
+        elsif opts[:save_to_file] || update_lock_file
           content = compute_and_save_to_file(module_ref, opts)
         else
           content = compute(module_ref, opts)
@@ -179,6 +182,58 @@ module DTK::Network
 
       def self.convert_to_module_ref(module_ref)
         ModuleRef.new(module_ref)
+      end
+
+      def self.raise_error_if_dependencies_changed!(yaml_content, parsed_module)
+        return unless parsed_module
+
+        changed = false
+        message = "Module dependencies have been changed, please use '-u' option to update '#{LOCK_FILE}' file accordingly."
+
+        dependencies = parsed_module.val(:DependentModules)
+        dependencies = convert_to_modules_lock_format(dependencies)
+
+        raise Error.new(message) if dependencies.size != yaml_content.size
+
+        dependencies.each do |name, value|
+          version = value['version']
+          source  = value['source']
+
+          if matching = yaml_content[name]
+            matching_version   = matching['version']
+            matching_source    = matching['source']
+            module_ref_version = ModuleRef::Version.new(version)
+            matches_version    = module_ref_version.satisfied_by?(matching_version)
+            matches_source     = (source == matching_source)
+            raise Error.new(message) unless (matches_version && matches_source)
+          else
+            raise Error.new(message)
+          end
+        end
+      end
+
+      def self.convert_to_modules_lock_format(dependencies)
+        modules_hash = {}
+
+        dependencies.each do |dependency|
+          version = dependency[:version]
+          source  = nil
+
+          if version.is_a?(Hash)
+            source = version['source'] || version[:source]
+            if matching_source = source && source.match(/(file:)(.*)/)
+              source = matching_source[2]
+            end
+            version = version['version'] || version[:version]
+          end
+
+          namespace_name = "#{dependency[:namespace]}/#{dependency[:module_name]}"
+          content_hash = {'version' => version}
+          content_hash['source'] = source if source
+          modules_hash.merge!(namespace_name => content_hash)
+        end
+
+        modules_hash
       end
 
     end
