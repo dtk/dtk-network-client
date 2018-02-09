@@ -184,27 +184,20 @@ module DTK::Network
         ModuleRef.new(module_ref)
       end
 
-      def self.raise_error_if_dependencies_changed!(yaml_content, parsed_module)
+      def self.raise_error_if_dependencies_changed!(lock_content, parsed_module)
         return unless parsed_module
 
-        changed = false
-        message = "Module dependencies have been changed, please use '-u' option to update '#{LOCK_FILE}' file accordingly."
+        message      = "Module dependencies have been changed, please use '-u' option to update '#{LOCK_FILE}' file accordingly."
+        dependencies = convert_to_modules_lock_format(parsed_module.val(:DependentModules))
 
-        dependencies = parsed_module.val(:DependentModules)
-        dependencies = convert_to_modules_lock_format(dependencies)
-
-        raise Error.new(message) if dependencies.size != yaml_content.size
+        lock_deps = filter_out_dependencies_of_dependencies(lock_content, dependencies)
+        raise Error.new(message) if dependencies.size != lock_deps.size
 
         dependencies.each do |name, value|
-          version = value['version']
-          source  = value['source']
-
-          if matching = yaml_content[name]
-            matching_version   = matching['version']
-            matching_source    = matching['source']
-            module_ref_version = ModuleRef::Version.new(version)
-            matches_version    = module_ref_version.satisfied_by?(matching_version)
-            matches_source     = (source == matching_source)
+          if matching = lock_deps[name]
+            module_ref_version = ModuleRef::Version.new(value['version'])
+            matches_version = module_ref_version.satisfied_by?(matching['version'])
+            matches_source = (value['source'] == matching['source'])
             raise Error.new(message) unless (matches_version && matches_source)
           else
             raise Error.new(message)
@@ -234,6 +227,41 @@ module DTK::Network
         end
 
         modules_hash
+      end
+
+      def self.filter_out_dependencies_of_dependencies(lock_content, module_yaml_dependencies)
+        top_level_dependencies = {}
+        nested_dependencies    = {}
+
+        lock_content.each do |lock_name, lock_value|
+          nested_dependencies.merge!(lock_value['modules'] || lock_value[:modules] || {})
+          top_level_dependencies.merge!(lock_name => {'version' => lock_value['version'], 'source' => lock_value['source']})
+        end
+
+        nested_dependencies.each do |nd_name, version|
+          source = nil
+
+          if version.is_a?(Hash)
+            version = version['version'] || version[:version]
+            source  = version['source']  || version[:source]
+          end
+
+          if top_level_dependency = top_level_dependencies[nd_name]
+            module_ref_version = ModuleRef::Version.new(version)
+            matches_version    = module_ref_version.satisfied_by?(top_level_dependency['version'])
+            matches_source     = (source == top_level_dependency['source'])
+
+            if yaml_dep = module_yaml_dependencies[nd_name]
+              matches_version_new = module_ref_version.satisfied_by?(yaml_dep['version'])
+              matches_source_new  = (source == yaml_dep['source'])
+              next unless (matches_version_new && matches_source_new)
+            end
+
+            top_level_dependencies.delete(nd_name) if (matches_version && matches_source)
+          end
+        end
+
+        top_level_dependencies
       end
 
     end
