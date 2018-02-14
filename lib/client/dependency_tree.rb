@@ -205,10 +205,10 @@ module DTK::Network
         end
       end
 
-      def self.convert_to_modules_lock_format(dependencies)
+      def self.convert_to_modules_lock_format(dependencies = {})
         modules_hash = {}
 
-        dependencies.each do |dependency|
+        (dependencies || {}).each do |dependency|
           version = dependency[:version]
           source  = nil
 

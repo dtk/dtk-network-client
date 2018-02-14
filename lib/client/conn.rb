@@ -40,13 +40,13 @@ module DTK::Network
       end
 
       def check_and_wrap_response(&rest_method_func)
-        response = rest_method_func.call
-
         if @connection_error
           raise Error, "Unable to connect to dtk network, please check your credentials and try again!"
         end
 
-        response
+        response = rest_method_func.call
+
+        # response
 
         # if Response::ErrorHandler.check_for_session_expiried(response)
         #   # re-logging user and repeating request
