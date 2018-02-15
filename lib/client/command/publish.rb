@@ -41,7 +41,7 @@ module DTK::Network::Client
         git_init_and_publish_to_remote(branch['name'], repo_url)
 
         published_response  = rest_post("modules/#{module_id}/publish", { version: module_ref_version.str_version })
-        bucket, object_name = ret_s3_bucket_info(published_response)
+        bucket, object_name = S3Helper.ret_s3_bucket_info(published_response)
         gz_body             = ModuleDir.create_and_ret_tar_gz(@module_directory, exclude_git: true)
         published_creds     = published_response['publish_credentails']
 
@@ -82,25 +82,25 @@ module DTK::Network::Client
         GitRepo.add_remote_and_publish(git_args)
       end
 
-      def ret_s3_bucket_info(published)
-        branch = published['branch'] || {}
-        bucket = nil
-        object_name = nil
+      # def ret_s3_bucket_info(published)
+      #   branch = published['branch'] || {}
+      #   bucket = nil
+      #   object_name = nil
 
-        if meta = branch['meta']
-          catalog_uri = meta['catalog_uri']
-          if match = catalog_uri.match(/.*amazonaws.com\/([^\/]*)\/(.*.gz)/)
-            bucket = match[1]
-            object_name = match[2]
-          end
-        else
-          raise "Unexpected that publish response does not contain branch metadata!"
-        end
+      #   if meta = branch['meta']
+      #     catalog_uri = meta['catalog_uri']
+      #     if match = catalog_uri.match(/.*amazonaws.com\/([^\/]*)\/(.*.gz)/)
+      #       bucket = match[1]
+      #       object_name = match[2]
+      #     end
+      #   else
+      #     raise "Unexpected that publish response does not contain branch metadata!"
+      #   end
 
-        raise "Unable to extract bucket and/or object name data from catalog_uri!" if bucket.nil? || object_name.nil?
+      #   raise "Unable to extract bucket and/or object name data from catalog_uri!" if bucket.nil? || object_name.nil?
 
-        return [bucket, object_name]
-      end
+      #   return [bucket, object_name]
+      # end
 
       def ret_codecommit_url(module_info)
         require 'open-uri'

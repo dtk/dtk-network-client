@@ -9,6 +9,7 @@ module DTK::Network
       require_relative('command/pull')
       require_relative('command/grant_access')
       require_relative('command/revoke_access')
+      require_relative('command/delete')
 
       include RestWrapper
       extend RestWrapper

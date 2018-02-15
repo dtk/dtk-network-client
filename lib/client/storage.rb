@@ -15,6 +15,10 @@ module DTK::Network::Client
       @adapter.download(data, opts)
     end
 
+    def delete(data, opts = {})
+      @adapter.delete(data, opts)
+    end
+
     private
 
     def adapter_class(adapter)

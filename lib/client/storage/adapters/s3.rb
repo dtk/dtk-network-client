@@ -15,6 +15,10 @@ module DTK::Network::Client
         def download(data_hash, opts = {})
           @s3.get_object(data_hash, opts)
         end
+
+        def delete(data_hash, opts = {})
+          @s3.delete_object(data_hash, opts)
+        end
       end
     end
   end

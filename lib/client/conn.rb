@@ -18,6 +18,10 @@ module DTK::Network
         check_and_wrap_response { json_parse_if_needed(post_raw(rest_url(route), post_body)) }
       end
 
+      def delete(route, delete_body = {})
+        check_and_wrap_response { json_parse_if_needed(delete_raw(rest_url(route), delete_body)) }
+      end
+
       def connection_error?
         !connection_error.nil?
       end
@@ -102,6 +106,10 @@ module DTK::Network
 
       def post_raw(url, post_body, params = {})
         Response::RestClientWrapper.post_raw(url, post_body, default_rest_opts.merge(:cookies => @cookies).merge(params))
+      end
+
+      def delete_raw(url, delete_body, params = {})
+        Response::RestClientWrapper.delete_raw(url, delete_body, default_rest_opts.merge(:cookies => @cookies).merge(params))
       end
 
       def json_parse_if_needed(item)

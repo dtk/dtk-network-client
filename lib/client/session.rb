@@ -41,6 +41,10 @@ module DTK::Network
         instance.conn.get(route, opts)
       end
 
+      def self.rest_delete(route, delete_body = {})
+        instance.conn.delete(route, delete_body)
+      end
+
       def self.get_codecommit_data
         instance.conn.codecommit
       end

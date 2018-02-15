@@ -12,6 +12,12 @@ module DTK::Network::Client
       end
     end
 
+    def rest_delete(url, post_body = {})
+      raise_error_if_notok_response do
+        Session.rest_delete(url, post_body)
+      end
+    end
+
     private
 
     def raise_error_if_notok_response(&block)

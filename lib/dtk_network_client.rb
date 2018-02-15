@@ -18,6 +18,7 @@ module DTK
       require_relative('client/module_ref')
       require_relative('client/module_dir')
       require_relative('client/file_helper')
+      require_relative('client/s3_helper')
       require_relative('client/error')
       require_relative('client/client_args')
       require_relative('client/storage')
