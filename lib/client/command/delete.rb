@@ -12,30 +12,35 @@ module DTK::Network::Client
       end
 
       def delete
-        require 'byebug'
-        byebug
-        delete_info = rest_get("modules/delete_info", { name: @module_ref.name, namespace: @module_ref.namespace, version: @module_ref.version.str_version })
-        delete_creds = delete_info['delete_credentails']
-        bucket, object_name = S3Helper.ret_s3_bucket_info(delete_info)
+        version = @module_ref.version
+        params = {
+          name: @module_ref.name,
+          namespace: @module_ref.namespace,
+          version: version.str_version
+        }
 
-        s3_args = Args.new({
-          region: 'us-east-1',
-          access_key_id: delete_creds['access_key_id'],
-          secret_access_key: delete_creds['secret_access_key'],
-          session_token: delete_creds['session_token']
-        })
-        storage = Storage.new(:s3, s3_args)
+        if version.is_semantic_version?
+          delete_info = rest_get("modules/delete_info", params)
+          delete_creds = delete_info['delete_credentails']
+          bucket, object_name = S3Helper.ret_s3_bucket_info(delete_info)
 
-        delete_args = Args.new({
-          bucket: bucket,
-          key: object_name
-        })
-        # storage.delete(delete_args)
-require 'byebug'
-byebug
-        branch_id = delete_info.dig('branch', 'id')
-        delete_info = rest_delete("branches/#{branch_id}")
-delete_info
+          s3_args = Args.new({
+            region: 'us-east-1',
+            access_key_id: delete_creds['access_key_id'],
+            secret_access_key: delete_creds['secret_access_key'],
+            session_token: delete_creds['session_token']
+          })
+          storage = Storage.new(:s3, s3_args)
+
+          delete_args = Args.new({
+            bucket: bucket,
+            key: object_name
+          })
+          storage.delete(delete_args)
+        end
+
+        rest_post("modules/delete_branch", params)
+
         nil
       end
     end
