@@ -11,6 +11,7 @@ module DTK::Network
       require_relative('command/revoke_access')
       require_relative('command/delete')
       require_relative('command/create_namespace')
+      require_relative('command/unpublish')
 
       include RestWrapper
       extend RestWrapper
