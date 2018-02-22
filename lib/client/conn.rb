@@ -118,7 +118,8 @@ module DTK::Network
 
       def set_codecommit_info(response)
         json_response = json_parse_if_needed(response)
-        if codecommit_data = json_response.dig('data', 'meta', 'aws', 'codecommit')
+        # if codecommit_data = json_response.dig('data', 'meta', 'aws', 'codecommit')
+        if codecommit_data = json_response['data']['meta']['aws']['codecommit']
           @codecommit = codecommit_data
         end
       end

@@ -105,10 +105,13 @@ module DTK::Network::Client
       def ret_codecommit_url(module_info)
         require 'open-uri'
 
-        if clone_url_http = module_info.dig('meta', 'aws', 'codecommit', 'repository_metadata', 'clone_url_http')
+        # if clone_url_http = module_info.dig('meta', 'aws', 'codecommit', 'repository_metadata', 'clone_url_http')
+        if clone_url_http = module_info['meta']['aws']['codecommit']['repository_metadata']['clone_url_http']
           codecommit_data = Session.get_codecommit_data
-          service_user_name = codecommit_data.dig('service_specific_credential', 'service_user_name')
-          service_password = codecommit_data.dig('service_specific_credential', 'service_password')
+          # service_user_name = codecommit_data.dig('service_specific_credential', 'service_user_name')
+          service_user_name = codecommit_data['service_specific_credential']['service_user_name']
+          # service_password = codecommit_data.dig('service_specific_credential', 'service_password')
+          service_password = codecommit_data['service_specific_credential']['service_password']
           encoded_password = URI.encode_www_form_component(service_password)
           url = nil
           if match = clone_url_http.match(/^(https:\/\/)(.*)$/)

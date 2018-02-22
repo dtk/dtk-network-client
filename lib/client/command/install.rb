@@ -32,7 +32,8 @@ module DTK::Network::Client
 
         (modules_info || []).each do |module_info|
           dep_module_list = module_info['module_list']
-          credentials = module_info.dig('credentails', 'credentials')
+          # credentials = module_info.dig('credentails', 'credentials')
+          credentials = (module_info['credentails']||{})['credentials']
 
           raise Error.new('Unexpected that repoman did not return any credentials') unless credentials
 
@@ -95,7 +96,8 @@ module DTK::Network::Client
 
           if main_module_info
             module_list.delete(main_module_info)
-            credentials = module_info.dig('credentails', 'credentials')
+            # credentials = module_info.dig('credentails', 'credentials')
+            credentials = (module_info['credentails']||{})['credentials']
             main_module_info.merge!('credentials' => credentials)
           end
         end
@@ -163,8 +165,10 @@ module DTK::Network::Client
 
         if codecommit_uri # = module_info.dig('meta', 'aws', 'codecommit', 'repository_metadata', 'codecommit_uri')
           codecommit_data   = Session.get_codecommit_data
-          service_user_name = codecommit_data.dig('service_specific_credential', 'service_user_name')
-          service_password  = codecommit_data.dig('service_specific_credential', 'service_password')
+          # service_user_name = codecommit_data.dig('service_specific_credential', 'service_user_name')
+          service_user_name = codecommit_data['service_specific_credential']['service_user_name']
+          # service_password  = codecommit_data.dig('service_specific_credential', 'service_password')
+          service_password  = codecommit_data['service_specific_credential']['service_password']
           encoded_password  = URI.encode_www_form_component(service_password)
           url = nil
           if match = codecommit_uri.match(/^(https:\/\/)(.*)$/)
