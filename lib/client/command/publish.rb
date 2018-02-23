@@ -36,9 +36,9 @@ module DTK::Network::Client
         module_id          = module_info['id']
         module_ref_version = @module_ref.version
         branch             = rest_post("modules/#{module_id}/branch", { version: module_ref_version.str_version, dependencies: dependencies.to_json })
-        repo_url           = ret_codecommit_url(module_info)
+        # repo_url           = ret_codecommit_url(module_info)
 
-        git_init_and_publish_to_remote(branch['name'], repo_url)
+        # git_init_and_publish_to_remote(branch['name'], repo_url)
 
         published_response  = rest_post("modules/#{module_id}/publish", { version: module_ref_version.str_version })
         bucket, object_name = S3Helper.ret_s3_bucket_info(published_response)
