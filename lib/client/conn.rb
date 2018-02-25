@@ -45,7 +45,11 @@ module DTK::Network
 
       def check_and_wrap_response(&rest_method_func)
         if @connection_error
-          raise Error, "Unable to connect to dtk network, please check your credentials and try again!"
+          if conn_error = connection_error['errors'].first
+            raise Error, conn_error
+          else
+            raise Error, "Unable to connect to dtk network, please check your credentials and try again!"
+          end
         end
 
         response = rest_method_func.call
