@@ -10,7 +10,7 @@ module DTK::Network::Client
       end
 
       def create_namespace
-        rest_post("groups", { name: @namespace })
+        rest_post("groups", { name: @namespace, reference: 'namespace' })
         nil
       end
 
