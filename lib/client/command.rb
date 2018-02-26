@@ -12,6 +12,7 @@ module DTK::Network
       require_relative('command/delete')
       require_relative('command/create_namespace')
       require_relative('command/unpublish')
+      require_relative('command/update')
 
       include RestWrapper
       extend RestWrapper
