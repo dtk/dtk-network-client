@@ -12,9 +12,9 @@ module DTK::Network::Client
       def self.run(module_info, opts = {})
         module_ref      = ModuleRef.new(module_info)
 
-        unless SemVer.parse(module_ref.version.str_version)
-          raise Error.new("Currently you are only allowed to publish semantic versions (1.0.0, 1.2.3, 2.0.0, ...)")
-        end
+        # unless SemVer.parse(module_ref.version.str_version)
+        #   raise Error.new("Currently you are only allowed to publish semantic versions (1.0.0, 1.2.3, 2.0.0, ...)")
+        # end
 
         dependency_tree = DependencyTree.get_or_create(module_ref, opts.merge(save_to_file: true))
         new(module_ref, dependency_tree, opts).publish
