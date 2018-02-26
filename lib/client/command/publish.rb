@@ -11,6 +11,11 @@ module DTK::Network::Client
 
       def self.run(module_info, opts = {})
         module_ref      = ModuleRef.new(module_info)
+
+        unless SemVer.parse(module_ref.version.str_version)
+          raise Error.new("Currently you are only allowed to publish semantic versions (1.0.0, 1.2.3, 2.0.0, ...)")
+        end
+
         dependency_tree = DependencyTree.get_or_create(module_ref, opts.merge(save_to_file: true))
         new(module_ref, dependency_tree, opts).publish
       end
@@ -82,41 +87,20 @@ module DTK::Network::Client
         GitRepo.add_remote_and_publish(git_args)
       end
 
-      # def ret_s3_bucket_info(published)
-      #   branch = published['branch'] || {}
-      #   bucket = nil
-      #   object_name = nil
-
-      #   if meta = branch['meta']
-      #     catalog_uri = meta['catalog_uri']
-      #     if match = catalog_uri.match(/.*amazonaws.com\/([^\/]*)\/(.*.gz)/)
-      #       bucket = match[1]
-      #       object_name = match[2]
-      #     end
-      #   else
-      #     raise "Unexpected that publish response does not contain branch metadata!"
-      #   end
-
-      #   raise "Unable to extract bucket and/or object name data from catalog_uri!" if bucket.nil? || object_name.nil?
-
-      #   return [bucket, object_name]
-      # end
-
       def ret_codecommit_url(module_info)
         require 'open-uri'
 
-        # if clone_url_http = module_info.dig('meta', 'aws', 'codecommit', 'repository_metadata', 'clone_url_http')
-        if clone_url_http = module_info['meta']['aws']['codecommit']['repository_metadata']['clone_url_http']
-          codecommit_data = Session.get_codecommit_data
-          # service_user_name = codecommit_data.dig('service_specific_credential', 'service_user_name')
+        if clone_url_http   = module_info['meta']['aws']['codecommit']['repository_metadata']['clone_url_http']
+          codecommit_data   = Session.get_codecommit_data
           service_user_name = codecommit_data['service_specific_credential']['service_user_name']
-          # service_password = codecommit_data.dig('service_specific_credential', 'service_password')
-          service_password = codecommit_data['service_specific_credential']['service_password']
-          encoded_password = URI.encode_www_form_component(service_password)
+          service_password  = codecommit_data['service_specific_credential']['service_password']
+          encoded_password  = URI.encode_www_form_component(service_password)
+
           url = nil
           if match = clone_url_http.match(/^(https:\/\/)(.*)$/)
             url = "#{match[1]}#{service_user_name}:#{encoded_password}@#{match[2]}"
           end
+
           url
         else
           raise "Unable to find codecommit https url"
