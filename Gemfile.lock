@@ -1,6 +1,6 @@
 GIT
   remote: git://github.com/dtk/dtk-common-core.git
-  revision: 1f1c1b3945c838471751016c1fd672fb2b22bc24
+  revision: 8a7cbc2ee96526cffbea00207c3accee79bf1019
   branch: DTK-3366
   specs:
     dtk-common-core (0.11.0)
