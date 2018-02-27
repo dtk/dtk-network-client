@@ -7,6 +7,7 @@ module DTK::Network::Client
         @module_directory = module_ref.repo_dir
         @options          = options
         @parsed_module    = options[:parsed_module]
+        @development_mode = options[:development_mode]
       end
 
       def self.run(module_info, opts = {})
@@ -16,7 +17,7 @@ module DTK::Network::Client
           raise Error.new("Currently you are only allowed to publish semantic versions (1.0.0, 1.2.3, 2.0.0, ...)")
         end
 
-        dependency_tree = DependencyTree.get_or_create(module_ref, opts.merge(save_to_file: true))
+        dependency_tree = DependencyTree.get_or_create(module_ref, opts.merge(save_to_file: true, development_mode: opts[:development_mode]))
         new(module_ref, dependency_tree, opts).publish
       end
 
@@ -28,6 +29,10 @@ module DTK::Network::Client
           (@parsed_module.val(:DependentModules) || []).map do |parsed_mr|
             dependencies << { 'namespace' => parsed_mr.req(:Namespace), 'module' => parsed_mr.req(:ModuleName), 'version' => parsed_mr.val(:ModuleVersion) }
           end
+        end
+
+        if @development_mode
+          puts "Base module.yaml dependencies:\n#{dependencies}"
         end
 
         if @module_ref.version.is_semantic_version?

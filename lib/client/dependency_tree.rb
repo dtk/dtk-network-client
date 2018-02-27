@@ -19,6 +19,7 @@ module DTK::Network
         @cache            = Cache.new
         @activated        = Activated.new
         @candidates       = Candidates.new
+        @development_mode = opts[:development_mode]
       end
 
       def self.get_or_create(module_ref, opts = {})
@@ -64,6 +65,8 @@ module DTK::Network
       def activate_dependencies(dependencies, opts = {})
         dependencies.each do |dependency|
           next if @activated.module_activated?(dependency)
+
+          puts "Calculating dependencies for module: #{dependency.full_name}(#{dependency.version.str_version})" if @development_mode
 
           check_for_conflicts(dependency)
 
