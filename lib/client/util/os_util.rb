@@ -32,7 +32,7 @@ module DTK::Network::Client::Util
     end
 
     def dtk_modules_location
-      "#{dtk_local_folder}/#{DTK_MODULES_DIR}"
+      @download_location ||= DTK::Network::Client::Config.module_download_location || "#{dtk_local_folder}/#{DTK_MODULES_DIR}"
     end
 
     def dtk_modules_gzip_location

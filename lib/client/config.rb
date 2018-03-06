@@ -23,6 +23,13 @@ module DTK::Network::Client
       [:endpoint, :port].each{ |k| raise "cannot find #{k}" unless ret[k] }
       "#{ret[:endpoint]}:#{ret[:port]}"
     end
+
+    def self.module_download_location
+      if File.exists?(DTK_NETWORK_CONFIG)
+        ret = parse_key_value_file(DTK_NETWORK_CONFIG) || {}
+        ret[:download_location]
+      end
+    end
     
     def self.parse_key_value_file(file)
       raise "Config file (#{file}) does not exists" unless File.exists?(file)
