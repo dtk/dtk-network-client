@@ -13,10 +13,13 @@ module DTK::Network
       require_relative('command/create_namespace')
       require_relative('command/unpublish')
       require_relative('command/update')
+      require_relative('command/chmod')
 
       include RestWrapper
       extend RestWrapper
       include DTK::Network::Client::Util::Tar
+      extend DTK::Client::PermissionsUtil
+      include DTK::Client::PermissionsUtil
 
       def self.wrap_command(args = Args.new, &block)
         block.call(Args.convert(args))
