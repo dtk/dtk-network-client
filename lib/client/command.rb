@@ -14,6 +14,7 @@ module DTK::Network
       require_relative('command/unpublish')
       require_relative('command/update')
       require_relative('command/chmod')
+      require_relative('command/delete_namespace')
 
       include RestWrapper
       extend RestWrapper
