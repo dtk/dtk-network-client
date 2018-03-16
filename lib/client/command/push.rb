@@ -16,7 +16,7 @@ module DTK::Network::Client
       end
 
       def push
-        module_info = rest_get('modules/module_info', { name: @module_ref.name, namespace: @module_ref.namespace, version: @module_ref.version.str_version })
+        module_info = rest_get('modules/module_info', { name: @module_ref.name, namespace: @module_ref.namespace, version: @module_ref.version.str_version, module_action: 'push' })
         remote_url = construct_remote_url(module_info)
         git_args = Args.new({
           repo_dir:   @module_directory,
