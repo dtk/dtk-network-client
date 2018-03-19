@@ -47,23 +47,31 @@ module DTK::Network::Client
 
         published_response  = rest_post("modules/#{module_id}/publish", { version: module_ref_version.str_version })
         bucket, object_name = S3Helper.ret_s3_bucket_info(published_response)
-        gz_body             = ModuleDir.create_and_ret_tar_gz(@module_directory, exclude_git: true)
-        published_creds     = published_response['publish_credentails']
+        # gz_body             = ModuleDir.create_and_ret_tar_gz(@module_directory, exclude_git: true)
 
+        resource_name   = object_name.gsub('/','__')
+        published_creds = published_response['publish_credentails']
+        `tar -cpzvf /tmp/#{resource_name} -C #{@module_directory} .`
+
+        require 'aws-sdk-s3'
         s3_args = Args.new({
           region: 'us-east-1',
           access_key_id: published_creds['access_key_id'],
           secret_access_key: published_creds['secret_access_key'],
           session_token: published_creds['session_token']
         })
-        storage = Storage.new(:s3, s3_args)
+        s3 = Aws::S3::Resource.new(s3_args)
+        # storage = Storage.new(:s3, s3_args)
 
-        upload_args = Args.new({
-          body: gz_body,
-          bucket: bucket,
-          key: object_name
-        })
-        storage.upload(upload_args)
+        obj = s3.bucket(bucket).object(object_name)
+        obj.upload_file("/tmp/#{resource_name}")
+        FileUtils.remove_entry("/tmp/#{resource_name}")
+        # upload_args = Args.new({
+          # body: gz_body,
+          # bucket: bucket,
+          # key: object_name
+        # })
+        # storage.upload(upload_args)
 
         rest_post("modules/update_status", { branch_id: branch['id'], status: 'published' })
       end
