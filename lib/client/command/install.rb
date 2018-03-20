@@ -121,7 +121,7 @@ module DTK::Network::Client
         FileUtils.rm_rf(install_location) if Dir.exist?(install_location)
 
         FileUtils.mkdir_p(install_location)
-        `tar xvC #{install_location} -f #{object_location_on_disk}`
+        `tar xC #{install_location} -f #{object_location_on_disk}`
         # ModuleDir.ungzip_and_untar(object_location_on_disk, install_location)
         FileUtils.remove_entry(object_location_on_disk)
 

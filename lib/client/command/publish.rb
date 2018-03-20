@@ -51,7 +51,7 @@ module DTK::Network::Client
 
         resource_name   = object_name.gsub('/','__')
         published_creds = published_response['publish_credentails']
-        `tar -cpzvf /tmp/#{resource_name} -C #{@module_directory} .`
+        `tar -cpzf /tmp/#{resource_name} -C #{@module_directory} .`
 
         require 'aws-sdk-s3'
         s3_args = Args.new({
