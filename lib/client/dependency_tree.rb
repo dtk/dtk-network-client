@@ -245,8 +245,8 @@ module DTK::Network
           source = nil
 
           if version.is_a?(Hash)
-            version = version['version'] || version[:version]
             source  = version['source']  || version[:source]
+            version = version['version'] || version[:version]
           end
 
           if top_level_dependency = top_level_dependencies[nd_name]

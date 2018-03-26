@@ -24,6 +24,16 @@ module DTK::Network::Client
           remote_url: remote_url
         })
         GitRepo.push_to_remote(git_args)
+
+        dependencies = []
+        if @parsed_module
+          (@parsed_module.val(:DependentModules) || []).map do |parsed_mr|
+            dependencies << { 'namespace' => parsed_mr.req(:Namespace), 'module' => parsed_mr.req(:ModuleName), 'version' => parsed_mr.val(:ModuleVersion) }
+          end
+        end
+
+        rest_post("modules/#{module_info['id']}/dependencies", { version: @module_ref.version.str_version, dependencies: dependencies.to_json })
+        nil
       end
 
       # TODO: move construct_remote_url to helper or mixin and use for all commands when needed
