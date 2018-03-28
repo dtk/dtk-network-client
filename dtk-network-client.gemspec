@@ -20,4 +20,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'rest-client', '1.6.7'
   spec.add_dependency 'aws-sdk', '~> 3'
   spec.add_dependency 'dtk-dsl', '~> 1.1.0'
+  spec.add_dependency 'dtk-common-core', '0.11.1'
 end
