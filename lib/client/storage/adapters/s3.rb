@@ -2,7 +2,7 @@ module DTK::Network::Client
   class Storage
     module Adapter
       class S3
-        require 'aws-sdk'
+        require 'aws-sdk-s3'
 
         def initialize(data_hash)
           @s3 = Aws::S3::Client.new(data_hash)
