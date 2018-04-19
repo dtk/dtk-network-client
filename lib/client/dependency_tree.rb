@@ -58,6 +58,8 @@ module DTK::Network
 
         activate_dependencies(dependencies)
         @activated
+
+        sort_activated_dependencies(@activated)
       end
 
       private
@@ -142,6 +144,19 @@ module DTK::Network
         else
           version
         end
+      end
+
+      def sort_activated_dependencies(activated_deps)
+        ret_hash = {}
+
+        activated_deps.each do |k, activated_dep|
+          ret_hash.merge!({ k => activated_dep })
+          if modules = (activated_dep[:modules] || activated_dep['modules'])
+            modules.each { |name, _content| ret_hash = {name => activated_deps[name]}.merge(ret_hash) }
+          end
+        end
+
+        ret_hash
       end
 
       def self.ret_as_module_refs(dep_modules)
