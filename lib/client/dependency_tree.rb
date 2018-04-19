@@ -167,6 +167,10 @@ module DTK::Network
           ret.merge!(source: source)
         end
 
+        if modules = version_hash[:modules] || version_hash['modules']
+          ret.merge!(modules: modules)
+        end
+
         ret
       end
 

@@ -183,7 +183,26 @@ module DTK::Network::Client
       end
 
       def convert_to_module_ref_lock_format(dep_tree)
-        dep_tree.inject({}) { |h, dep| h.merge!({ "#{dep[:namespace]}/#{dep[:name]}" => { 'version' => (dep[:version] || dep['version']) }})}
+        lock_format = {}
+
+        dep_tree.each do |dep|
+          dep_name = "#{dep[:namespace]}/#{dep[:name]}"
+
+          full_dep = { dep_name => {} }
+
+          if version = (dep[:version] || dep['version'])
+            full_dep[dep_name].merge!({ 'version' => version })
+          end
+
+          if modules = (dep[:modules] || dep['modules'])
+            full_dep[dep_name].merge!({ 'modules' => modules })
+          end
+
+          lock_format.merge!(full_dep)
+        end
+
+        lock_format
+        # dep_tree.inject({}) { |h, dep| h.merge!({ "#{dep[:namespace]}/#{dep[:name]}" => { 'version' => (dep[:version] || dep['version']), 'modules' => (dep[:modules] || dep['modules']) }})}
       end
     end
   end
