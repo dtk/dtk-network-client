@@ -55,9 +55,13 @@ module DTK::Network
         response = rest_method_func.call
 
         if check_for_session_expiried(response)
-          puts "Session expired: re-establishing session & re-trying request ..."
-          @cookies = Session.re_initialize
-          response = rest_method_func.call
+          3.times do
+            sleep 2
+            print "Session expired: re-establishing session & re-trying request ..."
+            @cookies = Session.re_initialize
+            response = rest_method_func.call
+            return response unless check_for_session_expiried(response)
+          end
         end
 
         response
