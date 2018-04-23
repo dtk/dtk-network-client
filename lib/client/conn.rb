@@ -54,21 +54,26 @@ module DTK::Network
 
         response = rest_method_func.call
 
-        # response
+        if check_for_session_expiried(response)
+          puts "Session expired: re-establishing session & re-trying request ..."
+          @cookies = Session.re_initialize
+          response = rest_method_func.call
+        end
 
-        # if Response::ErrorHandler.check_for_session_expiried(response)
-        #   # re-logging user and repeating request
-        #   OsUtil.print_warning("Session expired: re-establishing session & re-trying request ...")
-        #   @cookies = Session.re_initialize
-        #   response = rest_method_func.call
-        # end
+        response
+      end
 
+      def check_for_session_expiried(response)
+        if response && response.is_a?(Hash)
+          if errors = response['errors']
+            if errors.is_a?(Array)
+              error = errors.first
+              return true if error.eql?('You need to sign in or sign up before continuing.')
+            end
+          end
+        end
 
-        # response_obj = Response.new(response)
-
-        # queue messages from server to be displayed later
-        #TODO: DTK-2554: put in processing of messages Shell::MessageQueue.process_response(response_obj)
-        # response_obj
+        false
       end
 
       def login
