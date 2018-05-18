@@ -151,14 +151,14 @@ module DTK::Network::Client
     #   repo.head_commit_sha
     # end
 
-    def self.pull_from_remote(args)
-      repo_url       = args.required(:repo_url)
-      remote_branch  = args.required(:branch)
-      repo_dir       = args.required(:repo_dir)
+    # def self.pull_from_remote(args)
+    #   repo_url       = args.required(:repo_url)
+    #   remote_branch  = args.required(:branch)
+    #   repo_dir       = args.required(:repo_dir)
 
-      repo = git_repo.new(repo_dir, :branch => remote_branch)
-      repo.pull(repo.remotes.first, remote_branch)
-    end
+    #   repo = git_repo.new(repo_dir, :branch => remote_branch)
+    #   repo.pull(repo.remotes.first, remote_branch)
+    # end
 
     # def self.push_when_there_is_dtk_remote(repo, repo_dir, repo_url, remote_branch)
     #   # if there is only one remote and it is dtk-server; remove .git and initialize and push as new repo to dtk-server remote

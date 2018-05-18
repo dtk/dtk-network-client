@@ -276,7 +276,7 @@ module DTK::Network
             if yaml_dep = module_yaml_dependencies[nd_name]
               matches_version_new = module_ref_version.satisfied_by?(yaml_dep['version'])
               matches_source_new  = (source == yaml_dep['source'])
-              next unless (matches_version_new && matches_source_new)
+              next if (matches_version_new && matches_source_new)
             end
 
             top_level_dependencies.delete(nd_name) if (matches_version && matches_source)
