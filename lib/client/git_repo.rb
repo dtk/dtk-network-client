@@ -26,6 +26,7 @@ module DTK::Network::Client
         remote_branch = git_args[:remote_branch] || local_branch
         remote        = git_args[:remote] || 'origin'
         commit_msg    = git_args[:commit_msg] || "Push from dtkn client"
+        force         = git_args[:force]
 
         repo = git_repo.new(repo_dir, :branch => local_branch)
         create_if_missing = local_branch_exist?(repo, local_branch) ? false : git_args[:create_if_missing]
@@ -35,9 +36,9 @@ module DTK::Network::Client
         repo.commit(commit_msg, :allow_empty => true)
 
         if repo.is_there_remote?(remote)
-          push_when_there_is_remote(repo, remote, remote_url, remote_branch)
+          push_when_there_is_remote(repo, remote, remote_url, remote_branch, { force: force })
         else
-          add_remote_and_push(repo, remote, remote_url, remote_branch)
+          add_remote_and_push(repo, remote, remote_url, remote_branch, { force: force })
         end
       end
     end
@@ -83,9 +84,9 @@ module DTK::Network::Client
       repo.fetch(remote_name)
     end
 
-    def self.push_when_there_is_remote(repo, remote, remote_url, remote_branch)
+    def self.push_when_there_is_remote(repo, remote, remote_url, remote_branch, opts = {})
       repo.remove_remote(remote)
-      add_remote_and_push(repo, remote, remote_url, remote_branch)
+      add_remote_and_push(repo, remote, remote_url, remote_branch, opts)
     end
 
     def self.pull_when_there_is_remote(repo, remote, remote_url, remote_branch)
@@ -93,9 +94,9 @@ module DTK::Network::Client
       add_remote_and_pull(repo, remote, remote_url, remote_branch)
     end
 
-    def self.add_remote_and_push(repo, remote, remote_url, remote_branch)
+    def self.add_remote_and_push(repo, remote, remote_url, remote_branch, opts = {})
       repo.add_remote(remote, remote_url)
-      repo.push(remote, remote_branch)
+      repo.push(remote, remote_branch, opts)
     end
 
     def self.add_remote_and_pull(repo, remote, remote_url, remote_branch)
