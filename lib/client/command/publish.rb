@@ -17,7 +17,7 @@ module DTK::Network::Client
       end
 
       def publish
-        module_info  = rest_post('modules', { name: @module_ref.name, namespace: @module_ref.namespace, return_if_exists: true })
+        module_info  = rest_post('modules', { name: @module_ref.name, namespace: @module_ref.namespace, return_if_exists: true, version: @module_ref.version.str_version })
         dependencies = []
 
         if @parsed_module
