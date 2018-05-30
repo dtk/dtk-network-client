@@ -131,7 +131,7 @@ module DTK::Network::Client
       end
 
       def install_named_version(module_info, target_location = nil)
-        codecommit_uri   = construct_clone_url(module_info['codecommit_uri'])#module_info['codecommit_uri']
+        codecommit_uri   = construct_clone_url(module_info)
         install_location = target_location || "#{dtk_modules_location}/#{module_info['name']}-#{module_info['version']}"
 
         FileUtils.rm_rf(install_location) if Dir.exist?(install_location)
@@ -162,20 +162,23 @@ module DTK::Network::Client
         return [bucket, object_name]
       end
 
-      def construct_clone_url(codecommit_uri)
+      def construct_clone_url(module_info)
         require 'open-uri'
 
-        if codecommit_uri # = module_info.dig('meta', 'aws', 'codecommit', 'repository_metadata', 'codecommit_uri')
-          codecommit_data   = Session.get_codecommit_data
-          # service_user_name = codecommit_data.dig('service_specific_credential', 'service_user_name')
+        public_user_meta = module_info['public_user_meta']
+        codecommit_uri   = module_info['codecommit_uri']
+
+        if codecommit_uri
+          codecommit_data   = public_user_meta || Session.get_codecommit_data
           service_user_name = codecommit_data['service_specific_credential']['service_user_name']
-          # service_password  = codecommit_data.dig('service_specific_credential', 'service_password')
           service_password  = codecommit_data['service_specific_credential']['service_password']
           encoded_password  = URI.encode_www_form_component(service_password)
+
           url = nil
           if match = codecommit_uri.match(/^(https:\/\/)(.*)$/)
             url = "#{match[1]}#{service_user_name}:#{encoded_password}@#{match[2]}"
           end
+
           url
         else
           raise "Unable to find codecommit https url"
