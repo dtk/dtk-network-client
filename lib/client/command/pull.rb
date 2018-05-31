@@ -30,11 +30,10 @@ module DTK::Network::Client
       def construct_remote_url(module_info)
         require 'open-uri'
 
-        # if clone_url_http = module_info.dig('meta', 'aws', 'codecommit', 'repository_metadata', 'clone_url_http')
         if clone_url_http = module_info['meta']['aws']['codecommit']['repository_metadata']['clone_url_http']
-          codecommit_data   = Session.get_codecommit_data
-          # service_user_name = codecommit_data.dig('service_specific_credential', 'service_user_name')
-          # service_password  = codecommit_data.dig('service_specific_credential', 'service_password')
+          public_user_meta  = module_info['public_user_meta']
+          codecommit_data   = public_user_meta || Session.get_codecommit_data
+          # codecommit_data   = Session.get_codecommit_data
           service_user_name = codecommit_data['service_specific_credential']['service_user_name']
           service_password  = codecommit_data['service_specific_credential']['service_password']
           encoded_password  = URI.encode_www_form_component(service_password)
