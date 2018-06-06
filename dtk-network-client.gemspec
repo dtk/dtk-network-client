@@ -20,5 +20,5 @@ Gem::Specification.new do |spec|
   # spec.add_dependency 'aws-sdk', '~> 3'
   spec.add_dependency 'aws-sdk-s3', '~> 1.8'
   spec.add_dependency 'dtk-dsl', '~> 1.1.0'
-  spec.add_dependency 'dtk-common-core', '0.11.1.1'
+  spec.add_dependency 'dtk-common-core', '0.12.0'
 end
