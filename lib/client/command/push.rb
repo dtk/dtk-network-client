@@ -21,9 +21,15 @@ module DTK::Network::Client
         git_args = Args.new({
           repo_dir:   @module_directory,
           branch:     @module_ref.version.str_version,
-          remote_url: remote_url
+          remote_url: remote_url,
+          force:      @options[:force]
         })
-        GitRepo.push_to_remote(git_args)
+
+        begin
+          GitRepo.push_to_remote(git_args)
+        rescue Git::GitExecuteError => e
+          raise "Unable to do fast-forward push. You can use '--force' option to force push you changes to remote!"
+        end
 
         dependencies = []
         if @parsed_module
