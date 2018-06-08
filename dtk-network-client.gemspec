@@ -14,7 +14,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
   spec.files =  `git ls-files`.split("\n")
 
-  spec.add_dependency 'git', '1.2.9'
+  spec.add_dependency 'git', '~> 1.4.0'
   spec.add_dependency 'semverly', '~> 1.0'
   spec.add_dependency 'rest-client', '~> 1.7.3'
   # spec.add_dependency 'aws-sdk', '~> 3'
