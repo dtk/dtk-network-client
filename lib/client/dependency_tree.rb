@@ -53,7 +53,6 @@ module DTK::Network
       def compute
         dependencies = (ret_dependencies || []).map do |pm_ref|
           ModuleRef::Dependency.create_local_or_remote(pm_ref)
-          # ModuleRef::Dependency.new({ name: pm_ref['module'], namespace: pm_ref['namespace'], version: pm_ref['version'] })
         end
 
         activate_dependencies(dependencies)
@@ -274,7 +273,7 @@ module DTK::Network
             matches_source     = (source == top_level_dependency['source'])
 
             if yaml_dep = module_yaml_dependencies[nd_name]
-              matches_version_new = module_ref_version.satisfied_by?(yaml_dep['version'])
+              matches_version_new = module_ref_version.satisfied_by?(yaml_dep['version']) || module_ref_version.full_version == yaml_dep['version']
               matches_source_new  = (source == yaml_dep['source'])
               next if (matches_version_new && matches_source_new)
             end

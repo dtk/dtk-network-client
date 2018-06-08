@@ -32,7 +32,6 @@ module DTK::Network::Client
 
         (modules_info || []).each do |module_info|
           dep_module_list = module_info['module_list']
-          # credentials = module_info.dig('credentails', 'credentials')
           credentials = (module_info['credentails']||{})['credentials']
 
           raise Error.new('Unexpected that repoman did not return any credentials') unless credentials
@@ -82,7 +81,6 @@ module DTK::Network::Client
         end
 
         ModuleDir.create_file_with_content("#{module_location}/#{DependencyTree::LOCK_FILE}", YAML.dump(convert_to_module_ref_lock_format(@dependency_tree)))
-        # print "Main module installed in '#{module_location}'.\n"
       end
 
       def ret_main_module_install_info(modules_info = [])
@@ -96,7 +94,6 @@ module DTK::Network::Client
 
           if main_module_info
             module_list.delete(main_module_info)
-            # credentials = module_info.dig('credentails', 'credentials')
             credentials = (module_info['credentails']||{})['credentials']
             main_module_info.merge!('credentials' => credentials)
           end
@@ -122,7 +119,6 @@ module DTK::Network::Client
 
         FileUtils.mkdir_p(install_location)
         `tar xC #{install_location} -f #{object_location_on_disk}`
-        # ModuleDir.ungzip_and_untar(object_location_on_disk, install_location)
         FileUtils.remove_entry(object_location_on_disk)
 
         @ret << module_info.merge(location: install_location)
@@ -147,7 +143,6 @@ module DTK::Network::Client
         bucket = nil
         object_name = nil
 
-        # if meta = module_info['meta']
         if catalog_uri = module_info['uri']
           if match = catalog_uri.match(/.*amazonaws.com\/([^\/]*)\/(.*.gz)/)
             bucket = match[1]
@@ -205,7 +200,6 @@ module DTK::Network::Client
         end
 
         lock_format
-        # dep_tree.inject({}) { |h, dep| h.merge!({ "#{dep[:namespace]}/#{dep[:name]}" => { 'version' => (dep[:version] || dep['version']), 'modules' => (dep[:modules] || dep['modules']) }})}
       end
     end
   end

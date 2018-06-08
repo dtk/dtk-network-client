@@ -41,13 +41,9 @@ module DTK::Network::Client
         module_id          = module_info['id']
         module_ref_version = @module_ref.version
         branch             = rest_post("modules/#{module_id}/branch", { version: module_ref_version.str_version, dependencies: dependencies.to_json })
-        # repo_url           = ret_codecommit_url(module_info)
-
-        # git_init_and_publish_to_remote(branch['name'], repo_url)
 
         published_response  = rest_post("modules/#{module_id}/publish", { version: module_ref_version.str_version })
         bucket, object_name = S3Helper.ret_s3_bucket_info(published_response)
-        # gz_body             = ModuleDir.create_and_ret_tar_gz(@module_directory, exclude_git: true)
 
         resource_name   = object_name.gsub('/','__')
         published_creds = published_response['publish_credentails']
@@ -61,17 +57,10 @@ module DTK::Network::Client
           session_token: published_creds['session_token']
         })
         s3 = Aws::S3::Resource.new(s3_args)
-        # storage = Storage.new(:s3, s3_args)
 
         obj = s3.bucket(bucket).object(object_name)
         obj.upload_file("/tmp/#{resource_name}")
         FileUtils.remove_entry("/tmp/#{resource_name}")
-        # upload_args = Args.new({
-          # body: gz_body,
-          # bucket: bucket,
-          # key: object_name
-        # })
-        # storage.upload(upload_args)
 
         rest_post("modules/update_status", { branch_id: branch['id'], status: 'published' })
       end
