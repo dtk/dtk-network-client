@@ -28,6 +28,7 @@ module DTK::Network::Client
         begin
           GitRepo.push_to_remote(git_args)
         rescue Git::GitExecuteError => e
+          raise e.message if @options[:force]
           raise "Unable to do fast-forward push. You can use '--force' option to force push you changes to remote!"
         end
 
