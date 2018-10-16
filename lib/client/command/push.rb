@@ -24,9 +24,9 @@ module DTK::Network::Client
           remote_url: remote_url,
           force:      @options[:force]
         })
-
+        
         begin
-          GitRepo.push_to_remote(git_args)
+          diffs = GitRepo.push_to_remote(git_args)
         rescue Git::GitExecuteError => e
           raise e.message if @options[:force]
           raise "Unable to do fast-forward push. You can use '--force' option to force push you changes to remote!"
@@ -40,7 +40,7 @@ module DTK::Network::Client
         end
 
         rest_post("modules/#{module_info['id']}/dependencies", { version: @module_ref.version.str_version, dependencies: dependencies.to_json })
-        nil
+        diffs
       end
 
       # TODO: move construct_remote_url to helper or mixin and use for all commands when needed

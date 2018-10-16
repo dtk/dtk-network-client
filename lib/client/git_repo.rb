@@ -34,12 +34,14 @@ module DTK::Network::Client
         repo.checkout(local_branch, new_branch: create_if_missing)
         repo.add_all
         repo.commit(commit_msg, :allow_empty => true)
+        diffs = repo.diff_name_status("#{remote}/#{remote_branch}")
 
         if repo.is_there_remote?(remote)
           push_when_there_is_remote(repo, remote, remote_url, remote_branch, { force: force })
         else
           add_remote_and_push(repo, remote, remote_url, remote_branch, { force: force })
         end
+        diffs
       end
     end
 
