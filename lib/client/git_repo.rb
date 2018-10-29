@@ -52,14 +52,15 @@ module DTK::Network::Client
         local_branch  = git_args[:branch] || 'master'
         remote_branch = git_args[:remote_branch] || local_branch
         remote        = git_args[:remote] || 'origin'
+        force         = git_args[:force]
 
         repo = git_repo.new(repo_dir, :branch => local_branch)
         repo.checkout(local_branch)
 
         if repo.is_there_remote?(remote)
-          pull_when_there_is_remote(repo, remote, remote_url, remote_branch)
+          pull_when_there_is_remote(repo, remote, remote_url, remote_branch, { force: force })
         else
-          add_remote_and_pull(repo, remote, remote_url, remote_branch)
+          add_remote_and_pull(repo, remote, remote_url, remote_branch, { force: force })
         end
       end
     end
@@ -91,9 +92,9 @@ module DTK::Network::Client
       add_remote_and_push(repo, remote, remote_url, remote_branch, opts)
     end
 
-    def self.pull_when_there_is_remote(repo, remote, remote_url, remote_branch)
+    def self.pull_when_there_is_remote(repo, remote, remote_url, remote_branch, opts = {})
       repo.remove_remote(remote)
-      add_remote_and_pull(repo, remote, remote_url, remote_branch)
+      add_remote_and_pull(repo, remote, remote_url, remote_branch, opts)
     end
 
     def self.add_remote_and_push(repo, remote, remote_url, remote_branch, opts = {})
@@ -101,9 +102,14 @@ module DTK::Network::Client
       repo.push(remote, remote_branch, opts)
     end
 
-    def self.add_remote_and_pull(repo, remote, remote_url, remote_branch)
+    def self.add_remote_and_pull(repo, remote, remote_url, remote_branch, opts = {})
       repo.add_remote(remote, remote_url)
-      repo.pull(remote, remote_branch)
+      opts[:force] ? force_pull(repo, remote, remote_branch) : repo.pull(remote, remote_branch)
+    end
+
+    def self.force_pull(repo, remote, remote_branch)
+      repo.fetch(remote)
+      repo.reset_hard("#{remote}/#{remote_branch}")
     end
 
     def self.local_branch_exist?(repo, branch)

@@ -21,7 +21,8 @@ module DTK::Network::Client
         git_args = Args.new({
           repo_dir:   @module_directory,
           branch:     @module_ref.version.str_version,
-          remote_url: remote_url
+          remote_url: remote_url,
+          force:      @options[:force]
         })
         GitRepo.pull_from_remote(git_args)
       end
