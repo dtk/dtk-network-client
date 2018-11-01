@@ -58,9 +58,9 @@ module DTK::Network::Client
         repo.checkout(local_branch)
 
         if repo.is_there_remote?(remote)
-          pull_when_there_is_remote(repo, remote, remote_url, remote_branch, { force: force })
+          pull_when_there_is_remote(repo, remote, remote_url, local_branch, remote_branch, { force: force })
         else
-          add_remote_and_pull(repo, remote, remote_url, remote_branch, { force: force })
+          add_remote_and_pull(repo, remote, remote_url, local_branch, remote_branch, { force: force })
         end
       end
     end
@@ -92,9 +92,9 @@ module DTK::Network::Client
       add_remote_and_push(repo, remote, remote_url, remote_branch, opts)
     end
 
-    def self.pull_when_there_is_remote(repo, remote, remote_url, remote_branch, opts = {})
+    def self.pull_when_there_is_remote(repo, remote, remote_url, local_branch, remote_branch, opts = {})
       repo.remove_remote(remote)
-      add_remote_and_pull(repo, remote, remote_url, remote_branch, opts)
+      add_remote_and_pull(repo, remote, remote_url, local_branch, remote_branch, opts)
     end
 
     def self.add_remote_and_push(repo, remote, remote_url, remote_branch, opts = {})
@@ -102,9 +102,9 @@ module DTK::Network::Client
       repo.push(remote, remote_branch, opts)
     end
 
-    def self.add_remote_and_pull(repo, remote, remote_url, remote_branch, opts = {})
+    def self.add_remote_and_pull(repo, remote, remote_url, local_branch, remote_branch, opts = {})
       repo.add_remote(remote, remote_url)
-      opts[:force] ? force_pull(repo, remote, remote_branch) : repo.pull(remote, remote_branch)
+      opts[:force] ? force_pull(repo, remote, remote_branch) : reset_if_error(repo, local_branch) { repo.pull(remote, remote_branch) }
     end
 
     def self.force_pull(repo, remote, remote_branch)
@@ -223,6 +223,20 @@ module DTK::Network::Client
     def self.reset_hard(repo, merge_from_ref)
       repo.reset_hard(merge_from_ref)
       repo.head_commit_sha
+    end
+
+    def self.reset_if_error(repo, branch, &block)
+      ret = nil
+      begin
+        sha_before_operations =  repo.revparse(branch)
+        ret = yield
+      rescue => e
+        # reset to enable checkout of another branch
+        repo.add_all
+        repo.reset_hard(sha_before_operations)
+        raise e
+      end
+      ret
     end
 
   end
