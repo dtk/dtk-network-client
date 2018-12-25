@@ -78,7 +78,7 @@ module DTK::Network
           version_obj = dependency.version
           versions_in_range = version_obj.versions_in_range(dtkn_versions_w_deps)
 
-          raise "No version matching requirement '#{version_obj.full_version}'" if versions_in_range.empty?
+          raise "No version matching requirement '#{version_obj.full_version}' for dependent module '#{dependency.full_name}'" if versions_in_range.empty?
 
           versions_in_range.sort!
           latest_version = versions_in_range.last
