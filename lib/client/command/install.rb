@@ -20,7 +20,7 @@ module DTK::Network::Client
         begin
           dependency_tree = DependencyTree.get_or_create(module_ref, opts.merge(format: :hash))
           new(module_ref, dependency_tree, opts).install
-        rescue RuntimeError => ex
+        rescue Error::DependencyError => ex
           raise ex.to_s.concat(". Use flag --download-if-fail to download module content to local server.")  unless opts[:download_if_fail]
           new(module_ref, [], opts).install
           raise ex.to_s
