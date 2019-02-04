@@ -121,7 +121,7 @@ module DTK::Network
 
       def check_for_conflicts(dependency)
         if activated_mod = @activated.existing_name?(dependency.full_name)
-          raise DTK::Network::Client::Error::DependencyError, "There is already activated version '#{activated_mod[:version] || activated_mod['version']}' for module '#{dependency.full_name}' and it does not match required version '#{dependency.version.full_version}'"
+          raise Error::DependencyError, "There is already activated version '#{activated_mod[:version] || activated_mod['version']}' for module '#{dependency.full_name}' and it does not match required version '#{dependency.version.full_version}'"
         end
       end
 

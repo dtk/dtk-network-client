@@ -17,14 +17,17 @@ module DTK::Network::Client
 
       def self.run(module_info, opts = {})
         module_ref      = ModuleRef.new(module_info)
+
         begin
           dependency_tree = DependencyTree.get_or_create(module_ref, opts.merge(format: :hash))
-          new(module_ref, dependency_tree, opts).install
         rescue Error::DependencyError => ex
-          raise ex.to_s.concat(". Use flag --download-if-fail to download module content to local server.")  unless opts[:download_if_fail]
+          raise Error::DependencyError, "#{ex.message}Use flag --download-if-fail to download module content to your local environment to fix the problem." unless opts[:download_if_fail]
+
           new(module_ref, [], opts).install
-          raise ex.to_s
+          raise ex
         end
+
+        new(module_ref, dependency_tree, opts).install
       end
 
       def install

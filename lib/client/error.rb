@@ -20,12 +20,12 @@ module DTK::Network::Client
 
     class DependencyError < self
         def initialize(error_msg)
-          errors = [
+          errors = {
             'errors' => {
               'message' => error_msg
             }
-          ]
-          super(msg_to_pass_to_super)
+          }
+          super(errors)
         end
     end
 
