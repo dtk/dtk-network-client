@@ -13,13 +13,14 @@ module DTK::Network
       LOCK_FILE = "dtk.module.lock"
 
       def initialize(module_ref, opts = {})
-        @module_ref       = module_ref
-        @module_directory = opts[:module_directory] || module_ref.repo_dir
-        @parsed_module    = opts[:parsed_module]
-        @cache            = Cache.new
-        @activated        = Activated.new
-        @candidates       = Candidates.new
-        @development_mode = opts[:development_mode]
+        @module_ref          = module_ref
+        @module_directory    = opts[:module_directory] || module_ref.repo_dir
+        @parsed_module       = opts[:parsed_module]
+        @cache               = Cache.new
+        @activated           = Activated.new
+        @candidates          = Candidates.new
+        @development_mode    = opts[:development_mode]
+        @server_dependencies = opts[:server_dependencies]
       end
 
       def self.get_or_create(module_ref, opts = {})
@@ -71,12 +72,25 @@ module DTK::Network
 
           check_for_conflicts(dependency)
 
-          # dtkn_versions_w_deps_hash = dtkn_versions_with_dependencies(dependency)
-          dtkn_versions_w_deps_hash = dependency.dtkn_versions_with_dependencies
-          dtkn_versions_w_deps = dtkn_versions_w_deps_hash.map { |v| v['version'] }
+          # first check if module is installed on server
+          if dtkn_versions_w_deps_hash = !@server_dependencies.empty? && @server_dependencies["#{dependency.namespace}/#{dependency.name}"]
+            dtkn_versions_w_deps = dtkn_versions_w_deps_hash.map { |v| v['version'] }
+            versions_in_range = dependency.version.versions_in_range(dtkn_versions_w_deps)
+          end
 
-          version_obj = dependency.version
-          versions_in_range = version_obj.versions_in_range(dtkn_versions_w_deps)
+          if versions_in_range.nil? || versions_in_range.empty?
+            dtkn_versions_w_deps_hash = dependency.dtkn_versions_with_dependencies
+            dtkn_versions_w_deps = dtkn_versions_w_deps_hash.map { |v| v['version'] }
+            version_obj = dependency.version
+            versions_in_range = version_obj.versions_in_range(dtkn_versions_w_deps)
+          end
+
+          # dtkn_versions_w_deps_hash = dtkn_versions_with_dependencies(dependency)
+          # dtkn_versions_w_deps_hash = dependency.dtkn_versions_with_dependencies
+          # dtkn_versions_w_deps = dtkn_versions_w_deps_hash.map { |v| v['version'] }
+
+          # version_obj = dependency.version
+          # versions_in_range = version_obj.versions_in_range(dtkn_versions_w_deps)
 
           raise "No version matching requirement '#{version_obj.full_version}' for dependent module '#{dependency.full_name}'" if versions_in_range.empty?
 
