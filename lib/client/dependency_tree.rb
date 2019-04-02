@@ -73,7 +73,7 @@ module DTK::Network
           check_for_conflicts(dependency)
 
           # first check if module is installed on server
-          if dtkn_versions_w_deps_hash = !@server_dependencies.empty? && @server_dependencies["#{dependency.namespace}/#{dependency.name}"]
+          if dtkn_versions_w_deps_hash = @server_dependencies && !@server_dependencies.empty? && @server_dependencies["#{dependency.namespace}/#{dependency.name}"]
             dtkn_versions_w_deps = dtkn_versions_w_deps_hash.map { |v| v['version'] }
             versions_in_range = dependency.version.versions_in_range(dtkn_versions_w_deps)
           end
