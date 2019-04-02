@@ -20,10 +20,15 @@ module DTK::Network::Client
         module_info  = rest_post('modules', { name: @module_ref.name, namespace: @module_ref.namespace, return_if_exists: true, version: @module_ref.version.str_version })
         dependencies = []
 
-        if @parsed_module
-          (@parsed_module.val(:DependentModules) || []).map do |parsed_mr|
-            dependencies << { 'namespace' => parsed_mr.req(:Namespace), 'module' => parsed_mr.req(:ModuleName), 'version' => parsed_mr.val(:ModuleVersion) }
-          end
+        # if @parsed_module
+        #   (@parsed_module.val(:DependentModules) || []).map do |parsed_mr|
+        #     dependencies << { 'namespace' => parsed_mr.req(:Namespace), 'module' => parsed_mr.req(:ModuleName), 'version' => parsed_mr.val(:ModuleVersion) }
+        #   end
+        # end
+
+        # save all nested dependencies (from dtk.module.lock) in repoman instead of just top level ones (from dtk.module.yaml)
+        @dependency_tree.each do |parsed_mr|
+          dependencies << { 'namespace' => parsed_mr.namespace, 'module' => parsed_mr.name, 'version' => parsed_mr.version.str_version }
         end
 
         if @development_mode
